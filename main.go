@@ -26,6 +26,16 @@ func (i Image) RawLink() string {
 	return "/_image/" + i.ID.Hex()
 }
 
+type Tag string
+
+func (t Tag) String() string {
+	return string(t)
+}
+
+func (t Tag) Link() string {
+	return "/tags/" + string(t)
+}
+
 var (
 	session *mgo.Session
 )
@@ -41,6 +51,7 @@ func main() {
 	http.HandleFunc("/all", handleAll)
 	http.HandleFunc("/_image/", handleRawImage)
 	http.HandleFunc("/image/", handleImage)
+	http.HandleFunc("/tags", handleTags)
 
 	log.Fatalln(http.ListenAndServe(":3000", nil))
 }
@@ -107,6 +118,39 @@ func handleImage(w http.ResponseWriter, r *http.Request) {
 	</dl>
 	<img src="{{.RawLink}}">
 	`)).Execute(w, image)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func handleTags(w http.ResponseWriter, r *http.Request) {
+	c := session.DB("imagedb").C("images")
+
+	var images []Image
+	err := c.Find(nil).All(&images)
+	if err != nil {
+		panic(err)
+	}
+
+	_tags := map[Tag]bool{}
+	for _, image := range images {
+		for _, tag := range image.Tags {
+			_tags[Tag(tag)] = true
+		}
+	}
+
+	tags := []Tag{}
+	for tag := range _tags {
+		tags = append(tags, tag)
+	}
+
+	err = template.Must(template.New("").Parse(`<!doctype html>
+	<ul>
+	{{range .}}
+	<li><a href="{{.Link}}">{{.}}</a></li>
+	{{end}}
+	</ul>
+	`)).Execute(w, tags)
 	if err != nil {
 		panic(err)
 	}
