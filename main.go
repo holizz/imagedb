@@ -4,6 +4,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"strings"
 
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
@@ -34,6 +35,7 @@ func main() {
 	defer session.Close()
 
 	http.HandleFunc("/all", handleAll)
+	http.HandleFunc("/_image/", handleRawImage)
 
 	log.Fatalln(http.ListenAndServe(":3000", nil))
 }
@@ -54,4 +56,21 @@ func handleAll(w http.ResponseWriter, r *http.Request) {
 	{{end}}
 	</ul>
 	`)).Execute(w, images)
+}
+
+func handleRawImage(w http.ResponseWriter, r *http.Request) {
+	hexId := r.URL.Path[strings.LastIndex(r.URL.Path, "/")+1:]
+
+	c := session.DB("imagedb").C("images")
+
+	var image Image
+	err := c.Find(bson.M{
+		"_id": bson.ObjectIdHex(hexId),
+	}).One(&image)
+	if err != nil {
+		panic(err)
+	}
+
+	w.Header()["Content-type"] = []string{image.ContentType}
+	w.Write(image.Image)
 }
