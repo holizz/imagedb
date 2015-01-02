@@ -31,7 +31,12 @@ func main() {
 
 	displayCount()
 
-	for _, path := range flag.Args()[1:] {
+	if len(flag.Args()) == 0 {
+		fmt.Println("Usage: import [-n] [-t tag] [-t tag2] img1.jpg img2.jpg [...]")
+		os.Exit(1)
+	}
+
+	for _, path := range flag.Args() {
 		addImage(path, tags)
 	}
 
