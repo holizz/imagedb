@@ -26,6 +26,10 @@ func (i Image) RawLink() string {
 	return "/_image/" + i.ID.Hex()
 }
 
+func (i Image) TagsString() string {
+	return strings.Join(i.Tags, " ")
+}
+
 type Tag string
 
 func (t Tag) String() string {
@@ -110,15 +114,32 @@ func handleImage(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
+	if r.Method == "POST" {
+		image.Tags = strings.Split(r.FormValue("tags"), " ")
+
+		err := c.UpdateId(hexId, image)
+		if err != nil {
+			panic(err)
+		}
+
+		w.Header()["Location"] = []string{image.Link()}
+		w.WriteHeader(http.StatusFound)
+
+		return
+	}
+
 	err = template.Must(template.New("").Parse(`<!doctype html>
+	<form method="POST">
 	<dl>
 	<dt>Original name</dt>
 	<dd>{{.OriginalName}}</dd>
 	<dt>Tags</dt>
-	{{range .Tags}}
-	<dd>{{.}}</dd>
-	{{end}}
+	<dd>
+	<input type="text" name="tags" value="{{.TagsString}}">
+	</dd>
 	</dl>
+	<input type="submit" value="Save">
+	</form>
 	<img src="{{.RawLink}}">
 	`)).Execute(w, image)
 	if err != nil {
