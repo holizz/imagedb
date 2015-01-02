@@ -51,9 +51,23 @@ func main() {
 	http.HandleFunc("/all", handleAll)
 	http.HandleFunc("/_image/", handleRawImage)
 	http.HandleFunc("/image/", handleImage)
-	http.HandleFunc("/tags", handleTags)
+	http.HandleFunc("/tags", handleTagsList)
+	http.HandleFunc("/tags/", handleTags)
 
 	log.Fatalln(http.ListenAndServe(":3000", nil))
+}
+
+func listImages(w http.ResponseWriter, images []Image) {
+	err := template.Must(template.New("").Parse(`<!doctype html>
+	<ul>
+	{{range .}}
+	<li><a href="{{.Link}}">{{.Link}}</a></li>
+	{{end}}
+	</ul>
+	`)).Execute(w, images)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func handleAll(w http.ResponseWriter, r *http.Request) {
@@ -65,16 +79,7 @@ func handleAll(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	err = template.Must(template.New("").Parse(`<!doctype html>
-	<ul>
-	{{range .}}
-	<li><a href="{{.Link}}">{{.Link}}</a></li>
-	{{end}}
-	</ul>
-	`)).Execute(w, images)
-	if err != nil {
-		panic(err)
-	}
+	listImages(w, images)
 }
 
 func handleRawImage(w http.ResponseWriter, r *http.Request) {
@@ -123,7 +128,7 @@ func handleImage(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func handleTags(w http.ResponseWriter, r *http.Request) {
+func handleTagsList(w http.ResponseWriter, r *http.Request) {
 	c := session.DB("imagedb").C("images")
 
 	var images []Image
@@ -154,4 +159,20 @@ func handleTags(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func handleTags(w http.ResponseWriter, r *http.Request) {
+	tag := r.URL.Path[strings.LastIndex(r.URL.Path, "/")+1:]
+
+	c := session.DB("imagedb").C("images")
+
+	var images []Image
+	err := c.Find(bson.M{
+		"tags": tag,
+	}).All(&images)
+	if err != nil {
+		panic(err)
+	}
+
+	listImages(w, images)
 }
