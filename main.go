@@ -62,7 +62,7 @@ func listImages(w http.ResponseWriter, images []Image) {
 	err := template.Must(template.New("").Parse(`<!doctype html>
 	<ul>
 	{{range .}}
-	<li><a href="{{.Link}}">{{.Link}}</a></li>
+	<li><a href="{{.Link}}"><img src="{{.RawLink}}"></a></li>
 	{{end}}
 	</ul>
 	`)).Execute(w, images)
