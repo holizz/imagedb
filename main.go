@@ -18,7 +18,11 @@ type Image struct {
 	Tags         []string
 }
 
-func (i *Image) Link() string {
+func (i Image) Link() string {
+	return "/image/" + i.ID.Hex()
+}
+
+func (i Image) RawLink() string {
 	return "/_image/" + i.ID.Hex()
 }
 
@@ -36,6 +40,7 @@ func main() {
 
 	http.HandleFunc("/all", handleAll)
 	http.HandleFunc("/_image/", handleRawImage)
+	http.HandleFunc("/image/", handleImage)
 
 	log.Fatalln(http.ListenAndServe(":3000", nil))
 }
@@ -49,13 +54,16 @@ func handleAll(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	template.Must(template.New("").Parse(`<!doctype html>
+	err = template.Must(template.New("").Parse(`<!doctype html>
 	<ul>
 	{{range .}}
 	<li><a href="{{.Link}}">{{.Link}}</a></li>
 	{{end}}
 	</ul>
 	`)).Execute(w, images)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func handleRawImage(w http.ResponseWriter, r *http.Request) {
@@ -73,4 +81,33 @@ func handleRawImage(w http.ResponseWriter, r *http.Request) {
 
 	w.Header()["Content-type"] = []string{image.ContentType}
 	w.Write(image.Image)
+}
+
+func handleImage(w http.ResponseWriter, r *http.Request) {
+	hexId := r.URL.Path[strings.LastIndex(r.URL.Path, "/")+1:]
+
+	c := session.DB("imagedb").C("images")
+
+	var image Image
+	err := c.Find(bson.M{
+		"_id": bson.ObjectIdHex(hexId),
+	}).One(&image)
+	if err != nil {
+		panic(err)
+	}
+
+	err = template.Must(template.New("").Parse(`<!doctype html>
+	<dl>
+	<dt>Original name</dt>
+	<dd>{{.OriginalName}}</dd>
+	<dt>Tags</dt>
+	{{range .Tags}}
+	<dd>{{.}}</dd>
+	{{end}}
+	</dl>
+	<img src="{{.RawLink}}">
+	`)).Execute(w, image)
+	if err != nil {
+		panic(err)
+	}
 }
