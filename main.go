@@ -85,14 +85,12 @@ func handleAll(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleRawImage(w http.ResponseWriter, r *http.Request) {
-	hexId := r.URL.Path[strings.LastIndex(r.URL.Path, "/")+1:]
+	hexId := bson.ObjectIdHex(r.URL.Path[strings.LastIndex(r.URL.Path, "/")+1:])
 
 	c := session.DB("imagedb").C("images")
 
 	var image Image
-	err := c.Find(bson.M{
-		"_id": bson.ObjectIdHex(hexId),
-	}).One(&image)
+	err := c.FindId(hexId).One(&image)
 	if err != nil {
 		panic(err)
 	}
@@ -102,14 +100,12 @@ func handleRawImage(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleImage(w http.ResponseWriter, r *http.Request) {
-	hexId := r.URL.Path[strings.LastIndex(r.URL.Path, "/")+1:]
+	hexId := bson.ObjectIdHex(r.URL.Path[strings.LastIndex(r.URL.Path, "/")+1:])
 
 	c := session.DB("imagedb").C("images")
 
 	var image Image
-	err := c.Find(bson.M{
-		"_id": bson.ObjectIdHex(hexId),
-	}).One(&image)
+	err := c.FindId(hexId).One(&image)
 	if err != nil {
 		panic(err)
 	}
