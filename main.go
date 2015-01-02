@@ -48,6 +48,7 @@ func main() {
 	}
 	defer session.Close()
 
+	http.HandleFunc("/", handleRoot)
 	http.HandleFunc("/all", handleAll)
 	http.HandleFunc("/_image/", handleRawImage)
 	http.HandleFunc("/image/", handleImage)
@@ -190,4 +191,28 @@ func handleUntagged(w http.ResponseWriter, r *http.Request) {
 	}
 
 	listImages(w, images)
+}
+
+func handleRoot(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/" {
+		http.NotFoundHandler().ServeHTTP(w, r)
+		return
+	}
+
+	links := []string{
+		"/all",
+		"/tags",
+		"/untagged",
+	}
+
+	err := template.Must(template.New("").Parse(`<!doctype html>
+	<ul>
+	{{range .}}
+	<li><a href="{{.}}">{{.}}</a></li>
+	{{end}}
+	</ul>
+	`)).Execute(w, links)
+	if err != nil {
+		panic(err)
+	}
 }
