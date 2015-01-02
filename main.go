@@ -53,6 +53,7 @@ func main() {
 	http.HandleFunc("/image/", handleImage)
 	http.HandleFunc("/tags", handleTagsList)
 	http.HandleFunc("/tags/", handleTags)
+	http.HandleFunc("/untagged", handleUntagged)
 
 	log.Fatalln(http.ListenAndServe(":3000", nil))
 }
@@ -169,6 +170,20 @@ func handleTags(w http.ResponseWriter, r *http.Request) {
 	var images []Image
 	err := c.Find(bson.M{
 		"tags": tag,
+	}).All(&images)
+	if err != nil {
+		panic(err)
+	}
+
+	listImages(w, images)
+}
+
+func handleUntagged(w http.ResponseWriter, r *http.Request) {
+	c := session.DB("imagedb").C("images")
+
+	var images []Image
+	err := c.Find(bson.M{
+		"tags": []string{},
 	}).All(&images)
 	if err != nil {
 		panic(err)
