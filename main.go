@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"html/template"
 	"io"
 	"log"
@@ -12,36 +11,6 @@ import (
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
-
-type Image struct {
-	ID           bson.ObjectId `bson:"_id,omitempty"`
-	OriginalName string
-	ContentType  string
-	Image        []byte
-	Tags         []string
-}
-
-func (i Image) Link() string {
-	return "/image/" + i.ID.Hex()
-}
-
-func (i Image) RawLink() string {
-	return "/_image/" + i.ID.Hex()
-}
-
-func (i Image) TagsString() string {
-	return strings.Join(i.Tags, " ")
-}
-
-type Tag string
-
-func (t Tag) String() string {
-	return string(t)
-}
-
-func (t Tag) Link() string {
-	return "/tags/" + string(t)
-}
 
 var (
 	session *mgo.Session
@@ -65,19 +34,6 @@ func main() {
 	http.HandleFunc("/download", handleDownload)
 
 	log.Fatalln(http.ListenAndServe(":3000", nil))
-}
-
-func listImages(w http.ResponseWriter, images []Image) {
-	err := template.Must(template.New("").Parse(`<!doctype html>
-	<ul>
-	{{range .}}
-	<li><a href="{{.Link}}"><img src="{{.RawLink}}"></a></li>
-	{{end}}
-	</ul>
-	`)).Execute(w, images)
-	if err != nil {
-		panic(err)
-	}
 }
 
 func handleAll(w http.ResponseWriter, r *http.Request) {
@@ -284,30 +240,4 @@ func handleDownload(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
-}
-
-func addImage(image []byte, tags []string, originalName string) Image {
-	c := session.DB("imagedb").C("images")
-
-	if len(image) > int(math.Pow(2, 22)) {
-		// the image is bigger than 4MB!
-		panic(fmt.Errorf(`image too big: %d bytes`, len(image)))
-	}
-
-	mimeType := http.DetectContentType(image)
-
-	storedImage := Image{
-		ID:           bson.NewObjectId(),
-		OriginalName: originalName,
-		ContentType:  mimeType,
-		Image:        image,
-		Tags:         tags,
-	}
-
-	err := c.Insert(storedImage)
-	if err != nil {
-		panic(err)
-	}
-
-	return storedImage
 }
