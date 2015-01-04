@@ -6,6 +6,7 @@ import (
 	"log"
 	"math"
 	"net/http"
+	"sort"
 	"strings"
 
 	"gopkg.in/mgo.v2"
@@ -127,6 +128,8 @@ func handleTagsList(w http.ResponseWriter, r *http.Request) {
 	for tag := range _tags {
 		tags = append(tags, tag)
 	}
+
+	sort.Sort(TagByName(tags))
 
 	err = template.Must(template.New("").Parse(`<!doctype html>
 	<ul>
