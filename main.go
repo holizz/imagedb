@@ -1,8 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"html/template"
+	"io"
 	"log"
+	"math"
 	"net/http"
 	"strings"
 
@@ -59,6 +62,7 @@ func main() {
 	http.HandleFunc("/tags", handleTagsList)
 	http.HandleFunc("/tags/", handleTags)
 	http.HandleFunc("/untagged", handleUntagged)
+	http.HandleFunc("/download", handleDownload)
 
 	log.Fatalln(http.ListenAndServe(":3000", nil))
 }
@@ -220,6 +224,7 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 		"/all",
 		"/tags",
 		"/untagged",
+		"/download",
 	}
 
 	err := template.Must(template.New("").Parse(`<!doctype html>
@@ -232,4 +237,77 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func handleDownload(w http.ResponseWriter, r *http.Request) {
+	url := r.FormValue("url")
+
+	if r.Method == "POST" {
+		tags := strings.Split(r.FormValue("tags"), " ")
+
+		resp, err := http.Get(url)
+		if err != nil {
+			panic(err)
+		}
+
+		// Ignore size, addImage will check that
+		image := make([]byte, int(math.Pow(2, 22))+1)
+		n, err := io.ReadFull(resp.Body, image)
+		if err != nil && err != io.ErrUnexpectedEOF {
+			panic(err)
+		}
+
+		storedImage := addImage(image[:n], tags, url)
+
+		w.Header()["Location"] = []string{storedImage.Link()}
+		w.WriteHeader(http.StatusFound)
+
+		return
+	}
+
+	err := template.Must(template.New("").Parse(`<!doctype html>
+	<form method="POST">
+	<label>
+	URL
+	<input type="text" name="url" value="{{.url}}">
+	</label>
+	<label>
+	Tags
+	<input type="text" name="tags">
+	</label>
+	<input type="submit">
+	</form>
+	<img src="{{.url}}">
+	`)).Execute(w, map[string]interface{}{
+		"url": url,
+	})
+	if err != nil {
+		panic(err)
+	}
+}
+
+func addImage(image []byte, tags []string, originalName string) Image {
+	c := session.DB("imagedb").C("images")
+
+	if len(image) > int(math.Pow(2, 22)) {
+		// the image is bigger than 4MB!
+		panic(fmt.Errorf(`image too big: %d bytes`, len(image)))
+	}
+
+	mimeType := http.DetectContentType(image)
+
+	storedImage := Image{
+		ID:           bson.NewObjectId(),
+		OriginalName: originalName,
+		ContentType:  mimeType,
+		Image:        image,
+		Tags:         tags,
+	}
+
+	err := c.Insert(storedImage)
+	if err != nil {
+		panic(err)
+	}
+
+	return storedImage
 }
