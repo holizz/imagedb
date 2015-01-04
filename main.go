@@ -76,7 +76,7 @@ func handleImage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == "POST" {
-		image.Tags = strings.Split(r.FormValue("tags"), " ")
+		image.Tags = tagsFromString(r.FormValue("tags"))
 
 		err := c.UpdateId(hexId, image)
 		if err != nil {
@@ -202,7 +202,7 @@ func handleDownload(w http.ResponseWriter, r *http.Request) {
 	url := r.FormValue("url")
 
 	if r.Method == "POST" {
-		tags := strings.Split(r.FormValue("tags"), " ")
+		tags := tagsFromString(r.FormValue("tags"))
 
 		resp, err := http.Get(url)
 		if err != nil {

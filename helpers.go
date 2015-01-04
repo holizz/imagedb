@@ -5,6 +5,8 @@ import (
 	"html/template"
 	"math"
 	"net/http"
+	"strings"
+
 	"gopkg.in/mgo.v2/bson"
 )
 
@@ -45,4 +47,14 @@ func addImage(image []byte, tags []string, originalName string) Image {
 	}
 
 	return storedImage
+}
+
+func tagsFromString(s string) []string {
+	tags := []string{}
+	for _, t := range strings.Split(s, " ") {
+		if t != "" {
+			tags = append(tags, t)
+		}
+	}
+	return tags
 }
