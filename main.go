@@ -95,7 +95,7 @@ func handleImage(w http.ResponseWriter, r *http.Request) {
 	<dd>{{.OriginalName}}</dd>
 	<dt>Tags</dt>
 	<dd>
-	<input type="text" name="tags" value="{{.TagsString}}">
+	<input type="text" name="tags" value="{{.TagsString}}" autofocus>
 	</dd>
 	</dl>
 	<input type="submit" value="Save">
@@ -229,7 +229,7 @@ func handleDownload(w http.ResponseWriter, r *http.Request) {
 	</label>
 	<label>
 	Tags
-	<input type="text" name="tags">
+	<input type="text" name="tags" autofocus>
 	</label>
 	<input type="submit">
 	</form>
