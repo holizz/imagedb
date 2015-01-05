@@ -38,30 +38,40 @@ func main() {
 }
 
 func handleAll(w http.ResponseWriter, r *http.Request) {
-	c := session.DB("imagedb").C("images")
+	switch r.Method {
+	case "GET":
+		c := session.DB("imagedb").C("images")
 
-	var images []Image
-	err := c.Find(nil).All(&images)
-	if err != nil {
-		panic(err)
+		var images []Image
+		err := c.Find(nil).All(&images)
+		if err != nil {
+			panic(err)
+		}
+
+		listImages(w, images)
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
-
-	listImages(w, images)
 }
 
 func handleRawImage(w http.ResponseWriter, r *http.Request) {
-	hexId := bson.ObjectIdHex(r.URL.Path[strings.LastIndex(r.URL.Path, "/")+1:])
+	switch r.Method {
+	case "GET":
+		hexId := bson.ObjectIdHex(r.URL.Path[strings.LastIndex(r.URL.Path, "/")+1:])
 
-	c := session.DB("imagedb").C("images")
+		c := session.DB("imagedb").C("images")
 
-	var image Image
-	err := c.FindId(hexId).One(&image)
-	if err != nil {
-		panic(err)
+		var image Image
+		err := c.FindId(hexId).One(&image)
+		if err != nil {
+			panic(err)
+		}
+
+		w.Header()["Content-type"] = []string{image.ContentType}
+		w.Write(image.Image)
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
-
-	w.Header()["Content-type"] = []string{image.ContentType}
-	w.Write(image.Image)
 }
 
 func handleImage(w http.ResponseWriter, r *http.Request) {
@@ -75,7 +85,27 @@ func handleImage(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	if r.Method == "POST" {
+	switch r.Method {
+	case "GET":
+		err = template.Must(template.New("").Parse(`<!doctype html>
+		<form method="POST">
+		<dl>
+		<dt>Original name</dt>
+		<dd>{{.OriginalName}}</dd>
+		<dt>Tags</dt>
+		<dd>
+		<input type="text" name="tags" value="{{.TagsString}}" autofocus>
+		</dd>
+		</dl>
+		<input type="submit" value="Save">
+		</form>
+		<img src="{{.RawLink}}">
+		`)).Execute(w, image)
+		if err != nil {
+			panic(err)
+		}
+
+	case "POST":
 		image.Tags = tagsFromString(r.FormValue("tags"))
 
 		err := c.UpdateId(hexId, image)
@@ -86,122 +116,147 @@ func handleImage(w http.ResponseWriter, r *http.Request) {
 		w.Header()["Location"] = []string{image.Link()}
 		w.WriteHeader(http.StatusFound)
 
-		return
-	}
-
-	err = template.Must(template.New("").Parse(`<!doctype html>
-	<form method="POST">
-	<dl>
-	<dt>Original name</dt>
-	<dd>{{.OriginalName}}</dd>
-	<dt>Tags</dt>
-	<dd>
-	<input type="text" name="tags" value="{{.TagsString}}" autofocus>
-	</dd>
-	</dl>
-	<input type="submit" value="Save">
-	</form>
-	<img src="{{.RawLink}}">
-	`)).Execute(w, image)
-	if err != nil {
-		panic(err)
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
 }
 
 func handleTagsList(w http.ResponseWriter, r *http.Request) {
-	c := session.DB("imagedb").C("images")
+	switch r.Method {
+	case "GET":
+		c := session.DB("imagedb").C("images")
 
-	var images []Image
-	err := c.Find(nil).All(&images)
-	if err != nil {
-		panic(err)
-	}
-
-	_tags := map[Tag]bool{}
-	for _, image := range images {
-		for _, tag := range image.Tags {
-			_tags[Tag(tag)] = true
+		var images []Image
+		err := c.Find(nil).All(&images)
+		if err != nil {
+			panic(err)
 		}
-	}
 
-	tags := []Tag{}
-	for tag := range _tags {
-		tags = append(tags, tag)
-	}
+		_tags := map[Tag]bool{}
+		for _, image := range images {
+			for _, tag := range image.Tags {
+				_tags[Tag(tag)] = true
+			}
+		}
 
-	sort.Sort(TagByName(tags))
+		tags := []Tag{}
+		for tag := range _tags {
+			tags = append(tags, tag)
+		}
 
-	err = template.Must(template.New("").Parse(`<!doctype html>
-	<ul>
-	{{range .}}
-	<li><a href="{{.Link}}">{{.}}</a></li>
-	{{end}}
-	</ul>
-	`)).Execute(w, tags)
-	if err != nil {
-		panic(err)
+		sort.Sort(TagByName(tags))
+
+		err = template.Must(template.New("").Parse(`<!doctype html>
+		<ul>
+		{{range .}}
+		<li><a href="{{.Link}}">{{.}}</a></li>
+		{{end}}
+		</ul>
+		`)).Execute(w, tags)
+		if err != nil {
+			panic(err)
+		}
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
 }
 
 func handleTags(w http.ResponseWriter, r *http.Request) {
-	tag := r.URL.Path[strings.LastIndex(r.URL.Path, "/")+1:]
+	switch r.Method {
+	case "GET":
+		tag := r.URL.Path[strings.LastIndex(r.URL.Path, "/")+1:]
 
-	c := session.DB("imagedb").C("images")
+		c := session.DB("imagedb").C("images")
 
-	var images []Image
-	err := c.Find(bson.M{
-		"tags": tag,
-	}).All(&images)
-	if err != nil {
-		panic(err)
+		var images []Image
+		err := c.Find(bson.M{
+			"tags": tag,
+		}).All(&images)
+		if err != nil {
+			panic(err)
+		}
+
+		listImages(w, images)
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
-
-	listImages(w, images)
 }
 
 func handleUntagged(w http.ResponseWriter, r *http.Request) {
-	c := session.DB("imagedb").C("images")
+	switch r.Method {
+	case "GET":
+		c := session.DB("imagedb").C("images")
 
-	var images []Image
-	err := c.Find(bson.M{
-		"tags": []string{},
-	}).All(&images)
-	if err != nil {
-		panic(err)
+		var images []Image
+		err := c.Find(bson.M{
+			"tags": []string{},
+		}).All(&images)
+		if err != nil {
+			panic(err)
+		}
+
+		listImages(w, images)
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
-
-	listImages(w, images)
 }
 
 func handleRoot(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/" {
-		http.NotFoundHandler().ServeHTTP(w, r)
-		return
-	}
+	switch r.Method {
+	case "GET":
+		if r.URL.Path != "/" {
+			http.NotFoundHandler().ServeHTTP(w, r)
+			return
+		}
 
-	links := []string{
-		"/all",
-		"/tags",
-		"/untagged",
-		"/download",
-	}
+		links := []string{
+			"/all",
+			"/tags",
+			"/untagged",
+			"/download",
+		}
 
-	err := template.Must(template.New("").Parse(`<!doctype html>
-	<ul>
-	{{range .}}
-	<li><a href="{{.}}">{{.}}</a></li>
-	{{end}}
-	</ul>
-	`)).Execute(w, links)
-	if err != nil {
-		panic(err)
+		err := template.Must(template.New("").Parse(`<!doctype html>
+		<ul>
+		{{range .}}
+		<li><a href="{{.}}">{{.}}</a></li>
+		{{end}}
+		</ul>
+		`)).Execute(w, links)
+		if err != nil {
+			panic(err)
+		}
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
 }
 
 func handleDownload(w http.ResponseWriter, r *http.Request) {
 	url := r.FormValue("url")
 
-	if r.Method == "POST" {
+	switch r.Method {
+	case "GET":
+		err := template.Must(template.New("").Parse(`<!doctype html>
+		<form method="POST">
+		<label>
+		URL
+		<input type="text" name="url" value="{{.url}}">
+		</label>
+		<label>
+		Tags
+		<input type="text" name="tags" autofocus>
+		</label>
+		<input type="submit">
+		</form>
+		<img src="{{.url}}">
+		`)).Execute(w, map[string]interface{}{
+			"url": url,
+		})
+		if err != nil {
+			panic(err)
+		}
+
+	case "POST":
 		tags := tagsFromString(r.FormValue("tags"))
 
 		resp, err := http.Get(url)
@@ -221,26 +276,7 @@ func handleDownload(w http.ResponseWriter, r *http.Request) {
 		w.Header()["Location"] = []string{storedImage.Link()}
 		w.WriteHeader(http.StatusFound)
 
-		return
-	}
-
-	err := template.Must(template.New("").Parse(`<!doctype html>
-	<form method="POST">
-	<label>
-	URL
-	<input type="text" name="url" value="{{.url}}">
-	</label>
-	<label>
-	Tags
-	<input type="text" name="tags" autofocus>
-	</label>
-	<input type="submit">
-	</form>
-	<img src="{{.url}}">
-	`)).Execute(w, map[string]interface{}{
-		"url": url,
-	})
-	if err != nil {
-		panic(err)
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
 }
