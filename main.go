@@ -2,7 +2,6 @@ package main
 
 import (
 	"html/template"
-	"io"
 	"log"
 	"math"
 	"net/http"
@@ -266,14 +265,7 @@ func handleDownload(w http.ResponseWriter, r *http.Request) {
 			panic(err)
 		}
 
-		// Ignore size, addImage will check that
-		image := make([]byte, int(math.Pow(2, 22))+1)
-		n, err := io.ReadFull(resp.Body, image)
-		if err != nil && err != io.ErrUnexpectedEOF {
-			panic(err)
-		}
-
-		storedImage := addImage(image[:n], tags, url)
+		storedImage := addImage(resp.Body, tags, url)
 
 		w.Header()["Location"] = []string{storedImage.Link()}
 		w.WriteHeader(http.StatusFound)
@@ -300,13 +292,7 @@ func handleUpload(w http.ResponseWriter, r *http.Request) {
 			}
 			defer f.Close()
 
-			image := make([]byte, int(math.Pow(2, 22))+1)
-			n, err := io.ReadFull(f, image)
-			if err != nil && err != io.ErrUnexpectedEOF {
-				panic(err)
-			}
-
-			addImage(image[:n], tags, file.Filename)
+			addImage(f, tags, file.Filename)
 		}
 
 		w.Header()["Location"] = []string{"/tags"}

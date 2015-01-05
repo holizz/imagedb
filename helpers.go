@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"html/template"
+	"io"
 	"math"
 	"net/http"
 	"strings"
@@ -23,25 +24,31 @@ func listImages(w http.ResponseWriter, images []Image) {
 	}
 }
 
-func addImage(image []byte, tags []string, originalName string) Image {
+func addImage(imageReader io.Reader, tags []string, originalName string) Image {
 	c := session.DB("imagedb").C("images")
 
-	if len(image) > int(math.Pow(2, 22)) {
-		// the image is bigger than 4MB!
-		panic(fmt.Errorf(`image too big: %d bytes`, len(image)))
+	image := make([]byte, int(math.Pow(2, 22))+1)
+	n, err := io.ReadFull(imageReader, image)
+	if err != nil && err != io.ErrUnexpectedEOF {
+		panic(err)
 	}
 
-	mimeType := http.DetectContentType(image)
+	if n > int(math.Pow(2, 22)) {
+		// the image is bigger than 4MB!
+		panic(fmt.Errorf(`image too big: %d bytes`, n))
+	}
+
+	mimeType := http.DetectContentType(image[:n])
 
 	storedImage := Image{
 		ID:           bson.NewObjectId(),
 		OriginalName: originalName,
 		ContentType:  mimeType,
-		Image:        image,
+		Image:        image[:n],
 		Tags:         tags,
 	}
 
-	err := c.Insert(storedImage)
+	err = c.Insert(storedImage)
 	if err != nil {
 		panic(err)
 	}
