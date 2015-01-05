@@ -33,6 +33,7 @@ func main() {
 	http.HandleFunc("/tags/", handleTags)
 	http.HandleFunc("/untagged", handleUntagged)
 	http.HandleFunc("/download", handleDownload)
+	http.HandleFunc("/upload", handleUpload)
 
 	log.Fatalln(http.ListenAndServe(":3000", nil))
 }
@@ -214,6 +215,7 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 			"/tags",
 			"/untagged",
 			"/download",
+			"/upload",
 		}
 
 		err := template.Must(template.New("").Parse(`<!doctype html>
@@ -275,6 +277,58 @@ func handleDownload(w http.ResponseWriter, r *http.Request) {
 
 		w.Header()["Location"] = []string{storedImage.Link()}
 		w.WriteHeader(http.StatusFound)
+
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	}
+}
+
+func handleUpload(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case "POST":
+		tags := tagsFromString(r.FormValue("tags"))
+
+		err := r.ParseMultipartForm(int64(math.Pow(2, 29))) // 512MB
+		if err != nil {
+			panic(err)
+		}
+
+		for _, file := range r.MultipartForm.File["file"] {
+			f, err := file.Open()
+			if err != nil {
+				panic(err)
+			}
+			defer f.Close()
+
+			image := make([]byte, int(math.Pow(2, 22))+1)
+			n, err := io.ReadFull(f, image)
+			if err != nil && err != io.ErrUnexpectedEOF {
+				panic(err)
+			}
+
+			addImage(image[:n], tags, file.Filename)
+		}
+
+		w.Header()["Location"] = []string{"/tags"}
+		w.WriteHeader(http.StatusFound)
+
+	case "GET":
+		err := template.Must(template.New("").Parse(`<!doctype html>
+		<form method="POST" enctype="multipart/form-data">
+		<label>
+		Files
+		<input type="file" name="file" multiple accept="image/*">
+		</label>
+		<label>
+		Tags
+		<input type="text" name="tags">
+		</label>
+		<input type="submit">
+		</form>
+		`)).Execute(w, nil)
+		if err != nil {
+			panic(err)
+		}
 
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
