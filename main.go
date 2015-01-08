@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/justinas/alice"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -24,15 +25,17 @@ func main() {
 	}
 	defer session.Close()
 
-	http.HandleFunc("/", handleRoot)
-	http.HandleFunc("/all", handleAll)
-	http.HandleFunc("/_image/", handleRawImage)
-	http.HandleFunc("/image/", handleImage)
-	http.HandleFunc("/tags", handleTagsList)
-	http.HandleFunc("/tags/", handleTags)
-	http.HandleFunc("/untagged", handleUntagged)
-	http.HandleFunc("/download", handleDownload)
-	http.HandleFunc("/upload", handleUpload)
+	common := alice.New(handleLogging)
+
+	http.Handle("/", common.ThenFunc(handleRoot))
+	http.Handle("/all", common.ThenFunc(handleAll))
+	http.Handle("/_image/", common.ThenFunc(handleRawImage))
+	http.Handle("/image/", common.ThenFunc(handleImage))
+	http.Handle("/tags", common.ThenFunc(handleTagsList))
+	http.Handle("/tags/", common.ThenFunc(handleTags))
+	http.Handle("/untagged", common.ThenFunc(handleUntagged))
+	http.Handle("/download", common.ThenFunc(handleDownload))
+	http.Handle("/upload", common.ThenFunc(handleUpload))
 
 	log.Fatalln(http.ListenAndServe(":3000", nil))
 }
