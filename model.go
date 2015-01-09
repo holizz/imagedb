@@ -9,9 +9,14 @@ import (
 type Image struct {
 	ID           bson.ObjectId `bson:"_id,omitempty"`
 	OriginalName string
-	ContentType  string
-	Image        []byte
 	Tags         []string
+	RawImage     string
+}
+
+type RawImage struct {
+	ID          bson.ObjectId `bson:"_id,omitempty"`
+	ContentType string
+	Image       []byte
 }
 
 func (i Image) Link() string {
@@ -19,7 +24,7 @@ func (i Image) Link() string {
 }
 
 func (i Image) RawLink() string {
-	return "/_image/" + i.ID.Hex()
+	return "/_image/" + i.RawImage
 }
 
 func (i Image) TagsString() string {

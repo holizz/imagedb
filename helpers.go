@@ -26,6 +26,7 @@ func listImages(w http.ResponseWriter, images []Image) {
 
 func addImage(imageReader io.Reader, tags []string, originalName string) Image {
 	c := session.DB("imagedb").C("images")
+	d := session.DB("imagedb").C("raw_images")
 
 	image := make([]byte, int(math.Pow(2, 22))+1)
 	n, err := io.ReadFull(imageReader, image)
@@ -40,12 +41,22 @@ func addImage(imageReader io.Reader, tags []string, originalName string) Image {
 
 	mimeType := http.DetectContentType(image[:n])
 
+	rawImage := RawImage{
+		ID:          bson.NewObjectId(),
+		ContentType: mimeType,
+		Image:       image[:n],
+	}
+
+	err = d.Insert(rawImage)
+	if err != nil {
+		panic(err)
+	}
+
 	storedImage := Image{
 		ID:           bson.NewObjectId(),
 		OriginalName: originalName,
-		ContentType:  mimeType,
-		Image:        image[:n],
 		Tags:         tags,
+		RawImage:     rawImage.ID.Hex(),
 	}
 
 	err = c.Insert(storedImage)

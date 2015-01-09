@@ -62,9 +62,9 @@ func handleRawImage(w http.ResponseWriter, r *http.Request) {
 	case "GET":
 		hexId := bson.ObjectIdHex(r.URL.Path[strings.LastIndex(r.URL.Path, "/")+1:])
 
-		c := session.DB("imagedb").C("images")
+		c := session.DB("imagedb").C("raw_images")
 
-		var image Image
+		var image RawImage
 		err := c.FindId(hexId).One(&image)
 		if err != nil {
 			panic(err)
