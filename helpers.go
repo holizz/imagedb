@@ -11,14 +11,21 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
-func listImages(w http.ResponseWriter, images []Image) {
+func listImages(w http.ResponseWriter, r *http.Request, images []Image) {
 	err := template.Must(template.New("").Parse(`<!doctype html>
+	<form action="/search">
+	<input type="search" name="q" value="{{.q}}">
+	<input type="submit" value="Search">
+	</form>
 	<ul>
-	{{range .}}
+	{{range .images}}
 	<li><a href="{{.Link}}"><img src="{{.RawLink}}"></a></li>
 	{{end}}
 	</ul>
-	`)).Execute(w, images)
+	`)).Execute(w, map[string]interface{}{
+		"q":      r.FormValue("q"),
+		"images": images,
+	})
 	if err != nil {
 		panic(err)
 	}

@@ -52,7 +52,7 @@ func handleAll(w http.ResponseWriter, r *http.Request) {
 			panic(err)
 		}
 
-		listImages(w, images)
+		listImages(w, r, images)
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
@@ -180,7 +180,7 @@ func handleSearch(w http.ResponseWriter, r *http.Request) {
 			panic(err)
 		}
 
-		listImages(w, images)
+		listImages(w, r, images)
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
@@ -199,7 +199,7 @@ func handleUntagged(w http.ResponseWriter, r *http.Request) {
 			panic(err)
 		}
 
-		listImages(w, images)
+		listImages(w, r, images)
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
