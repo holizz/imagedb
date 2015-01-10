@@ -5,6 +5,7 @@ import (
 	"log"
 	"math"
 	"net/http"
+	"net/url"
 	"sort"
 	"strings"
 
@@ -299,7 +300,9 @@ func handleUpload(w http.ResponseWriter, r *http.Request) {
 		}
 
 		//TODO: /search?q=tag1+tag2
-		w.Header()["Location"] = []string{"/search"}
+		w.Header()["Location"] = []string{
+			"/search?s=" + url.QueryEscape(strings.Join(tags, " ")),
+		}
 		w.WriteHeader(http.StatusFound)
 
 	case "GET":
