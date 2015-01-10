@@ -1,6 +1,7 @@
 package main
 
 import (
+	"net/url"
 	"strings"
 
 	"gopkg.in/mgo.v2/bson"
@@ -38,7 +39,7 @@ func (t Tag) String() string {
 }
 
 func (t Tag) Link() string {
-	return "/tags/" + string(t)
+	return "/search?q=" + url.QueryEscape(string(t))
 }
 
 type TagByName []Tag

@@ -32,10 +32,10 @@ func main() {
 	http.Handle("/_image/", common.ThenFunc(handleRawImage))
 	http.Handle("/image/", common.ThenFunc(handleImage))
 	http.Handle("/tags", common.ThenFunc(handleTagsList))
-	http.Handle("/tags/", common.ThenFunc(handleTags))
 	http.Handle("/untagged", common.ThenFunc(handleUntagged))
 	http.Handle("/download", common.ThenFunc(handleDownload))
 	http.Handle("/upload", common.ThenFunc(handleUpload))
+	http.Handle("/search", common.ThenFunc(handleSearch))
 
 	log.Fatalln(http.ListenAndServe(":3000", nil))
 }
@@ -164,10 +164,10 @@ func handleTagsList(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func handleTags(w http.ResponseWriter, r *http.Request) {
+func handleSearch(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
-		tag := r.URL.Path[strings.LastIndex(r.URL.Path, "/")+1:]
+		tag := r.FormValue("q")
 
 		c := session.DB("imagedb").C("images")
 
@@ -214,7 +214,7 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 
 		links := []string{
 			"/all",
-			"/tags",
+			"/search",
 			"/untagged",
 			"/download",
 			"/upload",
@@ -298,7 +298,8 @@ func handleUpload(w http.ResponseWriter, r *http.Request) {
 			addImage(f, tags, file.Filename)
 		}
 
-		w.Header()["Location"] = []string{"/tags"}
+		//TODO: /search?q=tag1+tag2
+		w.Header()["Location"] = []string{"/search"}
 		w.WriteHeader(http.StatusFound)
 
 	case "GET":
