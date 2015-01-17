@@ -215,6 +215,7 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 
 		links := []string{
 			"/all",
+			"/tags",
 			"/search",
 			"/untagged",
 			"/download",
