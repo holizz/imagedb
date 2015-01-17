@@ -168,13 +168,15 @@ func handleTagsList(w http.ResponseWriter, r *http.Request) {
 func handleSearch(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
-		tag := r.FormValue("q")
+		tags := tagsFromString(r.FormValue("q"))
 
 		c := session.DB("imagedb").C("images")
 
 		var images []Image
 		err := c.Find(bson.M{
-			"tags": tag,
+			"tags": bson.M{
+				"$all": tags,
+			},
 		}).All(&images)
 		if err != nil {
 			panic(err)
