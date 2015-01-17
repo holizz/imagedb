@@ -299,9 +299,8 @@ func handleUpload(w http.ResponseWriter, r *http.Request) {
 			addImage(f, tags, file.Filename)
 		}
 
-		//TODO: /search?q=tag1+tag2
 		w.Header()["Location"] = []string{
-			"/search?s=" + url.QueryEscape(strings.Join(tags, " ")),
+			"/search?q=" + url.QueryEscape(strings.Join(tags, " ")),
 		}
 		w.WriteHeader(http.StatusFound)
 
