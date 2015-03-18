@@ -6,6 +6,7 @@ import (
 	"math"
 	"net/http"
 	"net/url"
+	"os"
 	"sort"
 	"strings"
 
@@ -20,7 +21,18 @@ var (
 
 func main() {
 	var err error
-	session, err = mgo.Dial("localhost:27017")
+
+	port := os.Getenv("PORT")
+	if len(port) == 0 {
+		port = "3000"
+	}
+
+	mongoHost := os.Getenv("MONGODB")
+	if len(mongoHost) == 0 {
+		mongoHost = "localhost:27017"
+	}
+
+	session, err = mgo.Dial(mongoHost)
 	if err != nil {
 		panic(err)
 	}
@@ -38,7 +50,7 @@ func main() {
 	http.Handle("/upload", common.ThenFunc(handleUpload))
 	http.Handle("/search", common.ThenFunc(handleSearch))
 
-	log.Fatalln(http.ListenAndServe(":3000", nil))
+	log.Fatalln(http.ListenAndServe(":"+port, nil))
 }
 
 func handleAll(w http.ResponseWriter, r *http.Request) {
