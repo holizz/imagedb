@@ -40,6 +40,8 @@ func main() {
 
 	common := alice.New(handleLogging)
 
+	http.Handle("/bower_components/", common.Then(http.StripPrefix("/bower_components/", http.FileServer(http.Dir("bower_components")))))
+
 	http.Handle("/", common.ThenFunc(handleRoot))
 	http.Handle("/all", common.ThenFunc(handleAll))
 	http.Handle("/_image/", common.ThenFunc(handleRawImage))

@@ -1,0 +1,19 @@
+{
+  "name": "imagedb",
+  "version": "0.0.0",
+  "homepage": "https://github.com/holizz/imagedb",
+  "authors": [
+    "Tom Adams <tom@holizz.com>"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "core-elements": "Polymer/core-elements#~0.5.5"
+  }
+}

@@ -13,15 +13,55 @@ import (
 
 func listImages(w http.ResponseWriter, r *http.Request, images []Image) {
 	err := template.Must(template.New("").Parse(`<!doctype html>
-	<form action="/search">
-	<input type="search" name="q" value="{{.q}}">
-	<input type="submit" value="Search">
-	</form>
-	<ul>
-	{{range .images}}
-	<li><a href="{{.Link}}"><img src="{{.RawLink}}"></a></li>
-	{{end}}
-	</ul>
+	<link rel="import" href="bower_components/core-pages/core-pages.html">
+	<link rel="import" href="bower_components/core-scaffold/core-scaffold.html">
+	<link rel="import" href="bower_components/core-menu/core-menu.html">
+	<link rel="import" href="bower_components/core-item/core-item.html">
+	<link rel="import" href="bower_components/core-image/core-image.html">
+
+	<body unresolved>
+
+	<core-scaffold>
+
+		<core-header-panel navigation flex mode="seamed">
+			<core-toolbar>imagedb</core-toolbar>
+			<core-menu>
+				{{range .images}}
+					<core-item>
+						<core-image src="{{.RawLink}}" sizing="contain" style="width: 100px; height: 100px"></core-image>
+					</core-item>
+				{{end}}
+			</core-menu>
+		</core-header-panel>
+
+		<div tool>
+			<form action="/search">
+				<input type="search" name="q" value="{{.q}}">
+				<input type="submit" value="Search">
+			</form>
+		</div>
+
+
+		<core-pages>
+			{{range .images}}
+				<div>
+					<a href="{{.Link}}"><core-image src="{{.RawLink}}" preload></core-image></a>
+				</div>
+			{{end}}
+		</core-pages>
+
+	</core-scaffold>
+
+	<script>
+		var menu = document.querySelector('core-menu')
+		var pages = document.querySelector('core-pages')
+
+		menu.addEventListener('core-activate', function() {
+			pages.selected = this.selected
+		})
+	</script>
+
+	</body>
 	`)).Execute(w, map[string]interface{}{
 		"q":      r.FormValue("q"),
 		"images": images,
