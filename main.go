@@ -1,7 +1,6 @@
 package main
 
 import (
-	"html/template"
 	"log"
 	"math"
 	"net/http"
@@ -105,23 +104,23 @@ func handleImage(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case "GET":
-		err = template.Must(template.New("").Parse(`<!doctype html>
+		render(w, `
+		{{define "title"}}Tags list{{end}}
+		{{define "body"}}
 		<form method="POST">
-		<dl>
-		<dt>Original name</dt>
-		<dd>{{.OriginalName}}</dd>
-		<dt>Tags</dt>
-		<dd>
-		<input type="text" name="tags" value="{{.TagsString}}" autofocus>
-		</dd>
-		</dl>
-		<input type="submit" value="Save">
+			<dl>
+				<dt>Original name</dt>
+				<dd>{{.OriginalName}}</dd>
+				<dt>Tags</dt>
+				<dd>
+					<input type="text" name="tags" value="{{.TagsString}}" autofocus>
+				</dd>
+			</dl>
+			<input type="submit" value="Save">
 		</form>
 		<img src="{{.RawLink}}">
-		`)).Execute(w, image)
-		if err != nil {
-			panic(err)
-		}
+		{{end}}
+		`, image)
 
 	case "POST":
 		image.Tags = tagsFromString(r.FormValue("tags"))
@@ -164,16 +163,16 @@ func handleTagsList(w http.ResponseWriter, r *http.Request) {
 
 		sort.Sort(TagByName(tags))
 
-		err = template.Must(template.New("").Parse(`<!doctype html>
+		render(w, `
+		{{define "title"}}Tags list{{end}}
+		{{define "body"}}
 		<ul>
-		{{range .}}
-		<li><a href="{{.Link}}">{{.}}</a></li>
-		{{end}}
+			{{range .}}
+				<li><a href="{{.Link}}">{{.}}</a></li>
+			{{end}}
 		</ul>
-		`)).Execute(w, tags)
-		if err != nil {
-			panic(err)
-		}
+		{{end}}
+		`, tags)
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
@@ -238,16 +237,16 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 			"/upload",
 		}
 
-		err := template.Must(template.New("").Parse(`<!doctype html>
+		render(w, `
+		{{define "title"}}Index{{end}}
+		{{define "body"}}
 		<ul>
-		{{range .}}
-		<li><a href="{{.}}">{{.}}</a></li>
-		{{end}}
+			{{range .}}
+				<li><a href="{{.}}">{{.}}</a></li>
+			{{end}}
 		</ul>
-		`)).Execute(w, links)
-		if err != nil {
-			panic(err)
-		}
+		{{end}}
+		`, links)
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
@@ -258,25 +257,25 @@ func handleDownload(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case "GET":
-		err := template.Must(template.New("").Parse(`<!doctype html>
+		render(w, `
+		{{define "title"}}Download{{end}}
+		{{define "body"}}
 		<form method="POST">
-		<label>
-		URL
-		<input type="text" name="url" value="{{.url}}">
-		</label>
-		<label>
-		Tags
-		<input type="text" name="tags" autofocus>
-		</label>
-		<input type="submit">
+			<label>
+				URL
+				<input type="text" name="url" value="{{.url}}">
+			</label>
+			<label>
+				Tags
+				<input type="text" name="tags" autofocus>
+			</label>
+			<input type="submit">
 		</form>
 		<img src="{{.url}}">
-		`)).Execute(w, map[string]interface{}{
+		{{end}}
+		`, map[string]interface{}{
 			"url": url,
 		})
-		if err != nil {
-			panic(err)
-		}
 
 	case "POST":
 		tags := tagsFromString(r.FormValue("tags"))
@@ -322,22 +321,22 @@ func handleUpload(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusFound)
 
 	case "GET":
-		err := template.Must(template.New("").Parse(`<!doctype html>
+		render(w, `
+		{{define "title"}}Upload{{end}}
+		{{define "body"}}
 		<form method="POST" enctype="multipart/form-data">
-		<label>
-		Files
-		<input type="file" name="file" multiple accept="image/*">
-		</label>
-		<label>
-		Tags
-		<input type="text" name="tags">
-		</label>
-		<input type="submit">
+			<label>
+				Files
+				<input type="file" name="file" multiple accept="image/*">
+			</label>
+			<label>
+				Tags
+				<input type="text" name="tags">
+			</label>
+			<input type="submit">
 		</form>
-		`)).Execute(w, nil)
-		if err != nil {
-			panic(err)
-		}
+		{{end}}
+		`, nil)
 
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
