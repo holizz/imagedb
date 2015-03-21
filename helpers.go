@@ -60,12 +60,21 @@ func listImages(w http.ResponseWriter, r *http.Request, images []Image) {
 		var menu = document.querySelector('core-menu')
 		var pages = document.querySelector('core-pages')
 
-		menu.addEventListener('core-activate', function() {
+		menu.addEventListener('core-select', function() {
 			pages.selected = this.selected
 
 			// fix height
 			pages.style.height = (pages.parentElement.offsetHeight - pages.parentElement.firstElementChild.offsetHeight) + "px"
 		})
+		document.onkeyup = function(e){
+			var move = 0
+			if (e.keyIdentifier === 'U+004B') {
+				move = -1
+			} else if (e.keyIdentifier === 'U+004A') {
+				move = 1
+			}
+			menu.selected = (menu.selected + move + menu.items.length) % menu.items.length
+		}
 	</script>
 
 	<style>
