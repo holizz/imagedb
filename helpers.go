@@ -12,16 +12,9 @@ import (
 )
 
 func listImages(w http.ResponseWriter, r *http.Request, images []Image) {
-	err := template.Must(template.New("").Parse(`<!doctype html>
-	<link rel="import" href="bower_components/core-pages/core-pages.html">
-	<link rel="import" href="bower_components/core-menu/core-menu.html">
-	<link rel="import" href="bower_components/core-item/core-item.html">
-	<link rel="import" href="bower_components/core-image/core-image.html">
-	<link rel="import" href="bower_components/core-drawer-panel/core-drawer-panel.html">
-	<link rel="import" href="bower_components/core-header-panel/core-header-panel.html">
-
-	<body unresolved fullbleed>
-
+	render(w, `
+	{{define "title"}}List of images{{end}}
+	{{define "body"}}
 	<core-drawer-panel>
 		<core-header-panel drawer>
 			<core-toolbar id="navheader">
@@ -82,15 +75,11 @@ func listImages(w http.ResponseWriter, r *http.Request, images []Image) {
 		overflow: hidden;
 	}
 	</style>
-
-	</body>
-	`)).Execute(w, map[string]interface{}{
+	{{end}}
+	`, map[string]interface{}{
 		"q":      r.FormValue("q"),
 		"images": images,
 	})
-	if err != nil {
-		panic(err)
-	}
 }
 
 func addImage(imageReader io.Reader, tags []string, originalName string) Image {
@@ -144,4 +133,32 @@ func tagsFromString(s string) []string {
 		}
 	}
 	return tags
+}
+
+func render(w io.Writer, tmpl string, context interface{}) {
+	t, err := template.New("").Parse(`<!doctype html>
+	<html>
+		<head>
+			<title>{{template "title" .}}</title>
+			<link rel="import" href="bower_components/core-pages/core-pages.html">
+			<link rel="import" href="bower_components/core-menu/core-menu.html">
+			<link rel="import" href="bower_components/core-item/core-item.html">
+			<link rel="import" href="bower_components/core-image/core-image.html">
+			<link rel="import" href="bower_components/core-drawer-panel/core-drawer-panel.html">
+			<link rel="import" href="bower_components/core-header-panel/core-header-panel.html">
+		</head>
+
+		<body unresolved fullbleed>
+
+			{{template "body" .}}
+
+		</body>
+	</html>
+	`)
+
+	err = template.Must(t.Parse(tmpl)).Execute(w, context)
+
+	if err != nil {
+		panic(err)
+	}
 }
