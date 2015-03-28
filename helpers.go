@@ -140,12 +140,12 @@ func render(w io.Writer, tmpl string, context interface{}) {
 	<html>
 		<head>
 			<title>{{template "title" .}}</title>
-			<link rel="import" href="bower_components/core-pages/core-pages.html">
-			<link rel="import" href="bower_components/core-menu/core-menu.html">
-			<link rel="import" href="bower_components/core-item/core-item.html">
-			<link rel="import" href="bower_components/core-image/core-image.html">
-			<link rel="import" href="bower_components/core-drawer-panel/core-drawer-panel.html">
-			<link rel="import" href="bower_components/core-header-panel/core-header-panel.html">
+			<link rel="import" href="/bower_components/core-pages/core-pages.html">
+			<link rel="import" href="/bower_components/core-menu/core-menu.html">
+			<link rel="import" href="/bower_components/core-item/core-item.html">
+			<link rel="import" href="/bower_components/core-image/core-image.html">
+			<link rel="import" href="/bower_components/core-drawer-panel/core-drawer-panel.html">
+			<link rel="import" href="/bower_components/core-header-panel/core-header-panel.html">
 		</head>
 
 		<body unresolved fullbleed>
