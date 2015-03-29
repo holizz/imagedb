@@ -84,7 +84,7 @@ func listImages(w http.ResponseWriter, r *http.Request, images []Image) {
 
 func addImage(imageReader io.Reader, tags []string, originalName string) Image {
 	c := session.DB("imagedb").C("images")
-	d := session.DB("imagedb").C("raw_images")
+	gridfs := session.DB("imagedb").GridFS("raw_images2")
 
 	image := make([]byte, int(math.Pow(2, 22))+1)
 	n, err := io.ReadFull(imageReader, image)
@@ -99,22 +99,20 @@ func addImage(imageReader io.Reader, tags []string, originalName string) Image {
 
 	mimeType := http.DetectContentType(image[:n])
 
-	rawImage := RawImage{
-		ID:          bson.NewObjectId(),
-		ContentType: mimeType,
-		Image:       image[:n],
-	}
-
-	err = d.Insert(rawImage)
+	rawImage, err := gridfs.Create("")
 	if err != nil {
 		panic(err)
 	}
+	defer rawImage.Close()
+
+	rawImage.SetContentType(mimeType)
+	rawImage.Write(image[:n])
 
 	storedImage := Image{
 		ID:           bson.NewObjectId(),
 		OriginalName: originalName,
 		Tags:         tags,
-		RawImage:     rawImage.ID.Hex(),
+		RawImage:     rawImage.Id().(bson.ObjectId).Hex(),
 	}
 
 	err = c.Insert(storedImage)

@@ -14,12 +14,6 @@ type Image struct {
 	RawImage     string
 }
 
-type RawImage struct {
-	ID          bson.ObjectId `bson:"_id,omitempty"`
-	ContentType string
-	Image       []byte
-}
-
 func (i Image) Link() string {
 	return "/image/" + i.ID.Hex()
 }

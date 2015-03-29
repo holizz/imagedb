@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io"
 	"log"
 	"math"
 	"net/http"
@@ -76,16 +77,19 @@ func handleRawImage(w http.ResponseWriter, r *http.Request) {
 	case "GET":
 		hexId := bson.ObjectIdHex(r.URL.Path[strings.LastIndex(r.URL.Path, "/")+1:])
 
-		c := session.DB("imagedb").C("raw_images")
+		gridfs := session.DB("imagedb").GridFS("raw_images2")
 
-		var image RawImage
-		err := c.FindId(hexId).One(&image)
+		image, err := gridfs.OpenId(hexId)
 		if err != nil {
 			panic(err)
 		}
+		defer image.Close()
 
-		w.Header()["Content-type"] = []string{image.ContentType}
-		w.Write(image.Image)
+		w.Header()["Content-type"] = []string{image.ContentType()}
+		_, err = io.Copy(w, image)
+		if err != nil {
+			panic(err)
+		}
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
