@@ -51,6 +51,7 @@ func main() {
 	http.Handle("/download", common.ThenFunc(handleDownload))
 	http.Handle("/upload", common.ThenFunc(handleUpload))
 	http.Handle("/search", common.ThenFunc(handleSearch))
+	http.Handle("/duplicates", common.ThenFunc(handleDuplicates))
 
 	log.Fatalln(http.ListenAndServe(":"+port, nil))
 }
@@ -239,6 +240,7 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 			"/untagged",
 			"/download",
 			"/upload",
+			"/duplicates",
 		}
 
 		render(w, `
@@ -341,6 +343,42 @@ func handleUpload(w http.ResponseWriter, r *http.Request) {
 		</form>
 		{{end}}
 		`, nil)
+
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	}
+}
+
+func handleDuplicates(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case "GET":
+
+		c := session.DB("imagedb").C("images")
+
+		var images []Image
+		err := c.Find(nil).All(&images)
+		if err != nil {
+			panic(err)
+		}
+
+		duplicates := map[string][]Image{}
+
+		for _, image := range images {
+			if _, ok := duplicates[image.Hash()]; !ok {
+				duplicates[image.Hash()] = []Image{}
+			}
+			duplicates[image.Hash()] = append(duplicates[image.Hash()], image)
+		}
+
+		duplicateImages := []Image{}
+
+		for _, dups := range duplicates {
+			if len(dups) > 1 {
+				duplicateImages = append(duplicateImages, dups...)
+			}
+		}
+
+		listImages(w, r, duplicateImages)
 
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)

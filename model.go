@@ -1,9 +1,12 @@
 package main
 
 import (
+	"fmt"
+	"io"
 	"net/url"
 	"strings"
 
+	"github.com/vova616/xxhash"
 	"gopkg.in/mgo.v2/bson"
 )
 
@@ -12,6 +15,7 @@ type Image struct {
 	OriginalName string
 	Tags         []string
 	RawImage     string
+	hash         string
 }
 
 func (i Image) Link() string {
@@ -24,6 +28,31 @@ func (i Image) RawLink() string {
 
 func (i Image) TagsString() string {
 	return strings.Join(i.Tags, " ")
+}
+
+func (i Image) Hash() string {
+	if i.hash == "" {
+		c := session.DB("imagedb").C("images")
+		gridfs := session.DB("imagedb").GridFS("raw_images2")
+
+		image, err := gridfs.OpenId(bson.ObjectIdHex(i.RawImage))
+		if err != nil {
+			panic(fmt.Errorf("could not find raw image for %s %#v", i.Link(), err))
+		}
+		defer image.Close()
+
+		hash := &xxhash.XXHash{}
+
+		_, err = io.Copy(hash, image)
+		if err != nil {
+			panic(err)
+		}
+		i.hash = fmt.Sprintf("%08x", hash.Sum32())
+
+		c.Insert(i)
+	}
+
+	return i.hash
 }
 
 type Tag string
