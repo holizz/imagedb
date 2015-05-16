@@ -356,7 +356,11 @@ func handleDuplicates(w http.ResponseWriter, r *http.Request) {
 		c := session.DB("imagedb").C("images")
 
 		var images []Image
-		err := c.Find(nil).All(&images)
+		err := c.Find(bson.M{
+			"tags": bson.M{
+				"$nin": []string{"_delete"},
+			},
+		}).All(&images)
 		if err != nil {
 			panic(err)
 		}
