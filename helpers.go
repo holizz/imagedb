@@ -160,3 +160,12 @@ func render(w io.Writer, tmpl string, context interface{}) {
 		panic(err)
 	}
 }
+
+func parseQuery(s string) bson.M {
+	tags := tagsFromString(s)
+	return bson.M{
+		"tags": bson.M{
+			"$all": tags,
+		},
+	}
+}
