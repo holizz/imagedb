@@ -83,9 +83,6 @@ func listImages(w http.ResponseWriter, r *http.Request, images []Image) {
 }
 
 func addImage(imageReader io.Reader, tags []string, originalName string) Image {
-	c := session.DB("imagedb").C("images")
-	gridfs := session.DB("imagedb").GridFS("raw_images2")
-
 	image := make([]byte, int(math.Pow(2, 22))+1)
 	n, err := io.ReadFull(imageReader, image)
 	if err != nil && err != io.ErrUnexpectedEOF {
@@ -99,7 +96,7 @@ func addImage(imageReader io.Reader, tags []string, originalName string) Image {
 
 	mimeType := http.DetectContentType(image[:n])
 
-	rawImage, err := gridfs.Create("")
+	rawImage, err := session.CreateRawImage()
 	if err != nil {
 		panic(err)
 	}
@@ -115,7 +112,7 @@ func addImage(imageReader io.Reader, tags []string, originalName string) Image {
 		RawImage:     rawImage.Id().(bson.ObjectId).Hex(),
 	}
 
-	err = c.Insert(storedImage)
+	err = session.Insert(storedImage)
 	if err != nil {
 		panic(err)
 	}

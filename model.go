@@ -32,10 +32,7 @@ func (i Image) TagsString() string {
 
 func (i Image) Hash() string {
 	if i.hash == "" {
-		c := session.DB("imagedb").C("images")
-		gridfs := session.DB("imagedb").GridFS("raw_images2")
-
-		image, err := gridfs.OpenId(bson.ObjectIdHex(i.RawImage))
+		image, err := session.OpenRawImage(i.RawImage)
 		if err != nil {
 			panic(fmt.Errorf("could not find raw image for %s %#v", i.Link(), err))
 		}
@@ -49,7 +46,7 @@ func (i Image) Hash() string {
 		}
 		i.hash = fmt.Sprintf("%08x", hash.Sum32())
 
-		c.Insert(i)
+		session.UpdateId(i.ID.String(), i)
 	}
 
 	return i.hash

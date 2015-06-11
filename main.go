@@ -11,17 +11,14 @@ import (
 	"strings"
 
 	"github.com/justinas/alice"
-	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
 
 var (
-	session *mgo.Session
+	session *Session
 )
 
 func main() {
-	var err error
-
 	port := os.Getenv("PORT")
 	if len(port) == 0 {
 		port = "3000"
@@ -32,7 +29,9 @@ func main() {
 		mongoHost = "localhost:27017"
 	}
 
-	session, err = mgo.Dial(mongoHost)
+	session = &Session{Host: mongoHost}
+
+	err := session.Connect()
 	if err != nil {
 		panic(err)
 	}
@@ -59,10 +58,7 @@ func main() {
 func handleAll(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
-		c := session.DB("imagedb").C("images")
-
-		var images []Image
-		err := c.Find(nil).All(&images)
+		images, err := session.Find(nil)
 		if err != nil {
 			panic(err)
 		}
@@ -76,11 +72,9 @@ func handleAll(w http.ResponseWriter, r *http.Request) {
 func handleRawImage(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
-		hexId := bson.ObjectIdHex(r.URL.Path[strings.LastIndex(r.URL.Path, "/")+1:])
+		hexId := r.URL.Path[strings.LastIndex(r.URL.Path, "/")+1:]
 
-		gridfs := session.DB("imagedb").GridFS("raw_images2")
-
-		image, err := gridfs.OpenId(hexId)
+		image, err := session.OpenRawImage(hexId)
 		if err != nil {
 			panic(err)
 		}
@@ -97,12 +91,9 @@ func handleRawImage(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleImage(w http.ResponseWriter, r *http.Request) {
-	hexId := bson.ObjectIdHex(r.URL.Path[strings.LastIndex(r.URL.Path, "/")+1:])
+	hexId := r.URL.Path[strings.LastIndex(r.URL.Path, "/")+1:]
 
-	c := session.DB("imagedb").C("images")
-
-	var image Image
-	err := c.FindId(hexId).One(&image)
+	image, err := session.FindId(hexId)
 	if err != nil {
 		panic(err)
 	}
@@ -130,7 +121,7 @@ func handleImage(w http.ResponseWriter, r *http.Request) {
 	case "POST":
 		image.Tags = tagsFromString(r.FormValue("tags"))
 
-		err := c.UpdateId(hexId, image)
+		err := session.UpdateId(hexId, image)
 		if err != nil {
 			panic(err)
 		}
@@ -146,10 +137,7 @@ func handleImage(w http.ResponseWriter, r *http.Request) {
 func handleTagsList(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
-		c := session.DB("imagedb").C("images")
-
-		var images []Image
-		err := c.Find(nil).All(&images)
+		images, err := session.Find(nil)
 		if err != nil {
 			panic(err)
 		}
@@ -188,10 +176,7 @@ func handleSearch(w http.ResponseWriter, r *http.Request) {
 	case "GET":
 		query := parseQuery(r.FormValue("q"))
 
-		c := session.DB("imagedb").C("images")
-
-		var images []Image
-		err := c.Find(query).All(&images)
+		images, err := session.Find(query)
 		if err != nil {
 			panic(err)
 		}
@@ -205,12 +190,9 @@ func handleSearch(w http.ResponseWriter, r *http.Request) {
 func handleUntagged(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
-		c := session.DB("imagedb").C("images")
-
-		var images []Image
-		err := c.Find(bson.M{
+		images, err := session.Find(bson.M{
 			"tags": []string{},
-		}).All(&images)
+		})
 		if err != nil {
 			panic(err)
 		}
@@ -349,14 +331,11 @@ func handleDuplicates(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
 
-		c := session.DB("imagedb").C("images")
-
-		var images []Image
-		err := c.Find(bson.M{
+		images, err := session.Find(bson.M{
 			"tags": bson.M{
 				"$nin": []string{"_delete"},
 			},
-		}).All(&images)
+		})
 		if err != nil {
 			panic(err)
 		}
