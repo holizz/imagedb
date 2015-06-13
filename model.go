@@ -30,11 +30,11 @@ func (i Image) TagsString() string {
 	return strings.Join(i.Tags, " ")
 }
 
-func (i Image) Hash() string {
+func (i Image) Hash() (string, error) {
 	if i.hash == "" {
 		image, err := session.OpenRawImage(i.RawImage)
 		if err != nil {
-			panic(fmt.Errorf("could not find raw image for %s %#v", i.Link(), err))
+			return "", fmt.Errorf("(Image) Hash: could not find raw image for %s %v", i.Link(), err)
 		}
 		defer image.Close()
 
@@ -42,14 +42,14 @@ func (i Image) Hash() string {
 
 		_, err = io.Copy(hash, image)
 		if err != nil {
-			panic(err)
+			return "", fmt.Errorf("(Image) Hash: failed copying: %v", err)
 		}
 		i.hash = fmt.Sprintf("%08x", hash.Sum32())
 
 		session.UpdateId(i.ID.String(), i)
 	}
 
-	return i.hash
+	return i.hash, nil
 }
 
 type Tag string

@@ -343,10 +343,15 @@ func handleDuplicates(w http.ResponseWriter, r *http.Request) {
 		duplicates := map[string][]Image{}
 
 		for _, image := range images {
-			if _, ok := duplicates[image.Hash()]; !ok {
-				duplicates[image.Hash()] = []Image{}
+			hash, err := image.Hash()
+			if err != nil {
+				panic(err)
 			}
-			duplicates[image.Hash()] = append(duplicates[image.Hash()], image)
+
+			if _, ok := duplicates[hash]; !ok {
+				duplicates[hash] = []Image{}
+			}
+			duplicates[hash] = append(duplicates[hash], image)
 		}
 
 		duplicateImages := []Image{}
