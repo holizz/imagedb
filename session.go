@@ -47,7 +47,7 @@ func (s *Session) OpenRawImage(hexId string) (*mgo.GridFile, error) {
 
 func (s *Session) UpdateId(hexId string, image Image) error {
 	c := s.mongo.DB("imagedb").C("images")
-	return c.UpdateId(hexId, image)
+	return c.UpdateId(bson.ObjectIdHex(hexId), image)
 }
 
 func (s *Session) CreateRawImage() (*mgo.GridFile, error) {
