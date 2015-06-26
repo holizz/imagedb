@@ -2,6 +2,7 @@ package db
 
 import (
 	"fmt"
+	"os"
 
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
@@ -10,6 +11,15 @@ import (
 type Session struct {
 	Host  string
 	mongo *mgo.Session
+}
+
+func NewSessionFromEnv() *Session {
+	mongoHost := os.Getenv("MONGODB")
+	if len(mongoHost) == 0 {
+		mongoHost = "localhost:27017"
+	}
+
+	return &Session{Host: mongoHost}
 }
 
 func (s *Session) Connect() error {

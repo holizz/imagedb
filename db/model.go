@@ -58,7 +58,7 @@ func (i Image) Hash(session *Session) (string, error) {
 		}
 		i.hash = fmt.Sprintf("%08x", hash.Sum32())
 
-		session.UpdateId(i.ID.String(), i)
+		session.UpdateId(i.ID.Hex(), i)
 	}
 
 	return i.hash, nil

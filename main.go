@@ -25,12 +25,7 @@ func main() {
 		port = "3000"
 	}
 
-	mongoHost := os.Getenv("MONGODB")
-	if len(mongoHost) == 0 {
-		mongoHost = "localhost:27017"
-	}
-
-	session = &db.Session{Host: mongoHost}
+	session = db.NewSessionFromEnv()
 
 	err := session.Connect()
 	if err != nil {
