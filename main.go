@@ -51,7 +51,6 @@ func main() {
 	http.Handle("/download", common.ThenFunc(handleDownload))
 	http.Handle("/upload", common.ThenFunc(handleUpload))
 	http.Handle("/search", common.ThenFunc(handleSearch))
-	http.Handle("/duplicates", common.ThenFunc(handleDuplicates))
 
 	log.Fatalln(http.ListenAndServe(":"+port, nil))
 }
@@ -219,7 +218,6 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 			"/untagged",
 			"/download",
 			"/upload",
-			"/duplicates",
 		}
 
 		render(w, `
@@ -322,48 +320,6 @@ func handleUpload(w http.ResponseWriter, r *http.Request) {
 		</form>
 		{{end}}
 		`, nil)
-
-	default:
-		w.WriteHeader(http.StatusMethodNotAllowed)
-	}
-}
-
-func handleDuplicates(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case "GET":
-
-		images, err := session.Find(bson.M{
-			"tags": bson.M{
-				"$nin": []string{"_delete"},
-			},
-		})
-		if err != nil {
-			panic(err)
-		}
-
-		duplicates := map[string][]db.Image{}
-
-		for _, image := range images {
-			hash, err := image.Hash(session)
-			if err != nil {
-				panic(err)
-			}
-
-			if _, ok := duplicates[hash]; !ok {
-				duplicates[hash] = []db.Image{}
-			}
-			duplicates[hash] = append(duplicates[hash], image)
-		}
-
-		duplicateImages := []db.Image{}
-
-		for _, dups := range duplicates {
-			if len(dups) > 1 {
-				duplicateImages = append(duplicateImages, dups...)
-			}
-		}
-
-		listImages(w, r, duplicateImages)
 
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
