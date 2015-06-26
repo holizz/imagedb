@@ -1,4 +1,4 @@
-package main
+package db
 
 import (
 	"fmt"
@@ -30,7 +30,7 @@ func (i Image) TagsString() string {
 	return strings.Join(i.Tags, " ")
 }
 
-func (i Image) Hash() (string, error) {
+func (i Image) Hash(session *Session) (string, error) {
 	if i.hash == "" {
 		image, err := session.OpenRawImage(i.RawImage)
 		if err != nil {

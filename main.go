@@ -10,12 +10,13 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/holizz/imagedb/db"
 	"github.com/justinas/alice"
 	"gopkg.in/mgo.v2/bson"
 )
 
 var (
-	session *Session
+	session *db.Session
 )
 
 func main() {
@@ -29,7 +30,7 @@ func main() {
 		mongoHost = "localhost:27017"
 	}
 
-	session = &Session{Host: mongoHost}
+	session = &db.Session{Host: mongoHost}
 
 	err := session.Connect()
 	if err != nil {
@@ -142,19 +143,19 @@ func handleTagsList(w http.ResponseWriter, r *http.Request) {
 			panic(err)
 		}
 
-		_tags := map[Tag]bool{}
+		_tags := map[db.Tag]bool{}
 		for _, image := range images {
 			for _, tag := range image.Tags {
-				_tags[Tag(tag)] = true
+				_tags[db.Tag(tag)] = true
 			}
 		}
 
-		tags := []Tag{}
+		tags := []db.Tag{}
 		for tag := range _tags {
 			tags = append(tags, tag)
 		}
 
-		sort.Sort(TagByName(tags))
+		sort.Sort(db.TagByName(tags))
 
 		render(w, `
 		{{define "title"}}Tags list{{end}}
@@ -340,21 +341,21 @@ func handleDuplicates(w http.ResponseWriter, r *http.Request) {
 			panic(err)
 		}
 
-		duplicates := map[string][]Image{}
+		duplicates := map[string][]db.Image{}
 
 		for _, image := range images {
-			hash, err := image.Hash()
+			hash, err := image.Hash(session)
 			if err != nil {
 				panic(err)
 			}
 
 			if _, ok := duplicates[hash]; !ok {
-				duplicates[hash] = []Image{}
+				duplicates[hash] = []db.Image{}
 			}
 			duplicates[hash] = append(duplicates[hash], image)
 		}
 
-		duplicateImages := []Image{}
+		duplicateImages := []db.Image{}
 
 		for _, dups := range duplicates {
 			if len(dups) > 1 {

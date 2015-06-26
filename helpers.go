@@ -8,10 +8,11 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/holizz/imagedb/db"
 	"gopkg.in/mgo.v2/bson"
 )
 
-func listImages(w http.ResponseWriter, r *http.Request, images []Image) {
+func listImages(w http.ResponseWriter, r *http.Request, images []db.Image) {
 	render(w, `
 	{{define "title"}}List of images{{end}}
 	{{define "body"}}
@@ -82,7 +83,7 @@ func listImages(w http.ResponseWriter, r *http.Request, images []Image) {
 	})
 }
 
-func addImage(imageReader io.Reader, tags []string, originalName string) Image {
+func addImage(imageReader io.Reader, tags []string, originalName string) db.Image {
 	image := make([]byte, int(math.Pow(2, 22))+1)
 	n, err := io.ReadFull(imageReader, image)
 	if err != nil && err != io.ErrUnexpectedEOF {
@@ -105,7 +106,7 @@ func addImage(imageReader io.Reader, tags []string, originalName string) Image {
 	rawImage.SetContentType(mimeType)
 	rawImage.Write(image[:n])
 
-	storedImage := Image{
+	storedImage := db.Image{
 		ID:           bson.NewObjectId(),
 		OriginalName: originalName,
 		Tags:         tags,
