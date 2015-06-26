@@ -119,7 +119,7 @@ func handleImage(w http.ResponseWriter, r *http.Request) {
 		`, image)
 
 	case "POST":
-		image.Tags = tagsFromString(r.FormValue("tags"))
+		image.SetTags(tagsFromString(r.FormValue("tags")))
 
 		err := session.UpdateId(hexId, image)
 		if err != nil {

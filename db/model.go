@@ -26,6 +26,18 @@ func (i Image) RawLink() string {
 	return "/_image/" + i.RawImage
 }
 
+func (i *Image) SetTags(tags []string) {
+	tagMap := map[string]bool{}
+	for _, t := range tags {
+		tagMap[t] = true
+	}
+	newTags := []string{}
+	for t, _ := range tagMap {
+		newTags = append(newTags, t)
+	}
+	i.Tags = newTags
+}
+
 func (i Image) TagsString() string {
 	return strings.Join(i.Tags, " ")
 }

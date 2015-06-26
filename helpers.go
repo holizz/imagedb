@@ -109,9 +109,10 @@ func addImage(imageReader io.Reader, tags []string, originalName string) db.Imag
 	storedImage := db.Image{
 		ID:           bson.NewObjectId(),
 		OriginalName: originalName,
-		Tags:         tags,
 		RawImage:     rawImage.Id().(bson.ObjectId).Hex(),
 	}
+
+	storedImage.SetTags(tags)
 
 	err = session.Insert(storedImage)
 	if err != nil {
