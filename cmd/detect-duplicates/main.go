@@ -52,7 +52,7 @@ func main() {
 
 		for _, image := range dupGroup {
 			log.Printf("  Tags: %s", image.TagsString())
-			session.UpdateId(image.ID.Hex(), image)
+			image.Update(session)
 		}
 	}
 

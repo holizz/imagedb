@@ -381,7 +381,7 @@ func handleRename(w http.ResponseWriter, r *http.Request) {
 
 			image.SetTags(tags)
 
-			session.UpdateId(image.ID.Hex(), image)
+			image.Update(session)
 		}
 
 		w.Header()["Location"] = []string{

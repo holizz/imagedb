@@ -58,10 +58,14 @@ func (i Image) Hash(session *Session) (string, error) {
 		}
 		i.hash = fmt.Sprintf("%08x", hash.Sum32())
 
-		session.UpdateId(i.ID.Hex(), i)
+		i.Update(session)
 	}
 
 	return i.hash, nil
+}
+
+func (i *Image) Update(session *Session) {
+	session.UpdateId(i.ID.Hex(), *i)
 }
 
 type Tag string
