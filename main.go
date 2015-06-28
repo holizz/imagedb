@@ -154,11 +154,18 @@ func handleTagsList(w http.ResponseWriter, r *http.Request) {
 		render(w, `
 		{{define "title"}}Tags list{{end}}
 		{{define "body"}}
-		<ul>
-			{{range .}}
-				<li><a href="{{.Link}}">{{.}}</a></li>
-			{{end}}
-		</ul>
+		<table>
+			<tbody>
+				<tr>
+					<th>Tag</th>
+				</tr>
+				{{range .}}
+					<tr>
+						<td><a href="{{.Link}}">{{.}}</a></td>
+					</tr>
+				{{end}}
+			</tbody>
+		</table>
 		{{end}}
 		`, tags)
 	default:
