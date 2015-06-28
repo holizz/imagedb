@@ -46,6 +46,7 @@ func main() {
 	http.Handle("/download", common.ThenFunc(handleDownload))
 	http.Handle("/upload", common.ThenFunc(handleUpload))
 	http.Handle("/search", common.ThenFunc(handleSearch))
+	http.Handle("/rename", common.ThenFunc(handleRename))
 
 	log.Fatalln(http.ListenAndServe(":"+port, nil))
 }
@@ -158,10 +159,14 @@ func handleTagsList(w http.ResponseWriter, r *http.Request) {
 			<tbody>
 				<tr>
 					<th>Tag</th>
+					<th>Actions</th>
 				</tr>
 				{{range .}}
 					<tr>
 						<td><a href="{{.Link}}">{{.}}</a></td>
+						<td>
+							<a href="/rename?from={{.}}">Rename</a>
+						</td>
 					</tr>
 				{{end}}
 			</tbody>
@@ -220,6 +225,7 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 			"/untagged",
 			"/download",
 			"/upload",
+			"/rename",
 		}
 
 		render(w, `
@@ -322,6 +328,66 @@ func handleUpload(w http.ResponseWriter, r *http.Request) {
 		</form>
 		{{end}}
 		`, nil)
+
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	}
+}
+
+func handleRename(w http.ResponseWriter, r *http.Request) {
+	from := r.FormValue("from")
+	to := r.FormValue("to")
+
+	switch r.Method {
+	case "GET":
+		render(w, `
+		{{define "title"}}Rename{{end}}
+		{{define "body"}}
+		<form method="POST">
+			<label>
+				From
+				<input type="text" name="from" value="{{.from}}">
+			</label>
+			<label>
+				To
+				<input type="text" name="to" value="{{.to}}">
+			</label>
+			<input type="submit">
+		</form>
+		{{end}}
+		`, map[string]interface{}{
+			"from": from,
+			"to":   to,
+		})
+
+	case "POST":
+		query := parseQuery(from)
+
+		images, err := session.Find(query)
+		if err != nil {
+			panic(err)
+		}
+
+		for _, image := range images {
+			tags := []string{}
+
+			for _, tag := range image.Tags {
+				if tag == from {
+					tags = append(tags, to)
+				} else {
+					tags = append(tags, tag)
+				}
+			}
+
+			image.SetTags(tags)
+
+			session.UpdateId(image.ID.Hex(), image)
+		}
+
+		w.Header()["Location"] = []string{
+			"/search?q=" + url.QueryEscape(to),
+		}
+		w.WriteHeader(http.StatusFound)
 
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
