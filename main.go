@@ -96,7 +96,7 @@ func handleImage(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
 		render(w, `
-		{{define "title"}}Tags list{{end}}
+		{{define "title"}}Image{{end}}
 		{{define "body"}}
 		<form method="POST">
 			<dl>
