@@ -15,17 +15,13 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
-var (
-	session *db.Session
-)
-
 func main() {
 	port := os.Getenv("PORT")
 	if len(port) == 0 {
 		port = "3000"
 	}
 
-	session = db.NewSessionFromEnv()
+	session := db.NewSessionFromEnv()
 
 	err := session.Connect()
 	if err != nil {
@@ -37,66 +33,71 @@ func main() {
 
 	http.Handle("/bower_components/", common.Then(http.StripPrefix("/bower_components/", http.FileServer(http.Dir("bower_components")))))
 
-	http.Handle("/", common.ThenFunc(handleRoot))
-	http.Handle("/all", common.ThenFunc(handleAll))
-	http.Handle("/_image/", common.ThenFunc(handleRawImage))
-	http.Handle("/image/", common.ThenFunc(handleImage))
-	http.Handle("/tags", common.ThenFunc(handleTagsList))
-	http.Handle("/untagged", common.ThenFunc(handleUntagged))
-	http.Handle("/download", common.ThenFunc(handleDownload))
-	http.Handle("/upload", common.ThenFunc(handleUpload))
-	http.Handle("/search", common.ThenFunc(handleSearch))
-	http.Handle("/rename", common.ThenFunc(handleRename))
+	http.Handle("/", common.ThenFunc(handleRoot(session)))
+	http.Handle("/all", common.ThenFunc(handleAll(session)))
+	http.Handle("/_image/", common.ThenFunc(handleRawImage(session)))
+	http.Handle("/image/", common.ThenFunc(handleImage(session)))
+	http.Handle("/tags", common.ThenFunc(handleTagsList(session)))
+	http.Handle("/untagged", common.ThenFunc(handleUntagged(session)))
+	http.Handle("/download", common.ThenFunc(handleDownload(session)))
+	http.Handle("/upload", common.ThenFunc(handleUpload(session)))
+	http.Handle("/search", common.ThenFunc(handleSearch(session)))
+	http.Handle("/rename", common.ThenFunc(handleRename(session)))
 
 	log.Fatalln(http.ListenAndServe(":"+port, nil))
 }
 
-func handleAll(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case "GET":
-		images, err := session.Find(nil)
-		if err != nil {
-			panic(err)
-		}
+func handleAll(session *db.Session) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case "GET":
+			images, err := session.Find(nil)
+			if err != nil {
+				panic(err)
+			}
 
-		listImages(w, r, images)
-	default:
-		w.WriteHeader(http.StatusMethodNotAllowed)
+			listImages(w, r, images)
+		default:
+			w.WriteHeader(http.StatusMethodNotAllowed)
+		}
 	}
 }
 
-func handleRawImage(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case "GET":
+func handleRawImage(session *db.Session) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case "GET":
+			hexId := r.URL.Path[strings.LastIndex(r.URL.Path, "/")+1:]
+
+			image, err := session.OpenRawImage(hexId)
+			if err != nil {
+				panic(err)
+			}
+			defer image.Close()
+
+			w.Header()["Content-type"] = []string{image.ContentType()}
+			_, err = io.Copy(w, image)
+			if err != nil {
+				panic(err)
+			}
+		default:
+			w.WriteHeader(http.StatusMethodNotAllowed)
+		}
+	}
+}
+
+func handleImage(session *db.Session) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
 		hexId := r.URL.Path[strings.LastIndex(r.URL.Path, "/")+1:]
 
-		image, err := session.OpenRawImage(hexId)
+		image, err := session.FindId(hexId)
 		if err != nil {
 			panic(err)
 		}
-		defer image.Close()
 
-		w.Header()["Content-type"] = []string{image.ContentType()}
-		_, err = io.Copy(w, image)
-		if err != nil {
-			panic(err)
-		}
-	default:
-		w.WriteHeader(http.StatusMethodNotAllowed)
-	}
-}
-
-func handleImage(w http.ResponseWriter, r *http.Request) {
-	hexId := r.URL.Path[strings.LastIndex(r.URL.Path, "/")+1:]
-
-	image, err := session.FindId(hexId)
-	if err != nil {
-		panic(err)
-	}
-
-	switch r.Method {
-	case "GET":
-		render(w, `
+		switch r.Method {
+		case "GET":
+			render(w, `
 		{{define "title"}}Image{{end}}
 		{{define "body"}}
 		<form method="POST">
@@ -114,45 +115,47 @@ func handleImage(w http.ResponseWriter, r *http.Request) {
 		{{end}}
 		`, image)
 
-	case "POST":
-		image.SetTags(tagsFromString(r.FormValue("tags")))
+		case "POST":
+			image.SetTags(tagsFromString(r.FormValue("tags")))
 
-		err := session.UpdateId(hexId, image)
-		if err != nil {
-			panic(err)
+			err := session.UpdateId(hexId, image)
+			if err != nil {
+				panic(err)
+			}
+
+			w.Header()["Location"] = []string{image.Link()}
+			w.WriteHeader(http.StatusFound)
+
+		default:
+			w.WriteHeader(http.StatusMethodNotAllowed)
 		}
-
-		w.Header()["Location"] = []string{image.Link()}
-		w.WriteHeader(http.StatusFound)
-
-	default:
-		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
 }
 
-func handleTagsList(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case "GET":
-		images, err := session.Find(nil)
-		if err != nil {
-			panic(err)
-		}
-
-		_tags := map[db.Tag]bool{}
-		for _, image := range images {
-			for _, tag := range image.Tags {
-				_tags[db.Tag(tag)] = true
+func handleTagsList(session *db.Session) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case "GET":
+			images, err := session.Find(nil)
+			if err != nil {
+				panic(err)
 			}
-		}
 
-		tags := []db.Tag{}
-		for tag := range _tags {
-			tags = append(tags, tag)
-		}
+			_tags := map[db.Tag]bool{}
+			for _, image := range images {
+				for _, tag := range image.Tags {
+					_tags[db.Tag(tag)] = true
+				}
+			}
 
-		sort.Sort(db.TagByName(tags))
+			tags := []db.Tag{}
+			for tag := range _tags {
+				tags = append(tags, tag)
+			}
 
-		render(w, `
+			sort.Sort(db.TagByName(tags))
+
+			render(w, `
 		{{define "title"}}Tags list{{end}}
 		{{define "body"}}
 		<table>
@@ -173,62 +176,68 @@ func handleTagsList(w http.ResponseWriter, r *http.Request) {
 		</table>
 		{{end}}
 		`, tags)
-	default:
-		w.WriteHeader(http.StatusMethodNotAllowed)
+		default:
+			w.WriteHeader(http.StatusMethodNotAllowed)
+		}
 	}
 }
 
-func handleSearch(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case "GET":
-		query := parseQuery(r.FormValue("q"))
+func handleSearch(session *db.Session) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case "GET":
+			query := parseQuery(r.FormValue("q"))
 
-		images, err := session.Find(query)
-		if err != nil {
-			panic(err)
+			images, err := session.Find(query)
+			if err != nil {
+				panic(err)
+			}
+
+			listImages(w, r, images)
+		default:
+			w.WriteHeader(http.StatusMethodNotAllowed)
 		}
-
-		listImages(w, r, images)
-	default:
-		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
 }
 
-func handleUntagged(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case "GET":
-		images, err := session.Find(bson.M{
-			"tags": []string{},
-		})
-		if err != nil {
-			panic(err)
-		}
+func handleUntagged(session *db.Session) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case "GET":
+			images, err := session.Find(bson.M{
+				"tags": []string{},
+			})
+			if err != nil {
+				panic(err)
+			}
 
-		listImages(w, r, images)
-	default:
-		w.WriteHeader(http.StatusMethodNotAllowed)
+			listImages(w, r, images)
+		default:
+			w.WriteHeader(http.StatusMethodNotAllowed)
+		}
 	}
 }
 
-func handleRoot(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case "GET":
-		if r.URL.Path != "/" {
-			http.NotFoundHandler().ServeHTTP(w, r)
-			return
-		}
+func handleRoot(session *db.Session) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case "GET":
+			if r.URL.Path != "/" {
+				http.NotFoundHandler().ServeHTTP(w, r)
+				return
+			}
 
-		links := []string{
-			"/all",
-			"/tags",
-			"/search",
-			"/untagged",
-			"/download",
-			"/upload",
-			"/rename",
-		}
+			links := []string{
+				"/all",
+				"/tags",
+				"/search",
+				"/untagged",
+				"/download",
+				"/upload",
+				"/rename",
+			}
 
-		render(w, `
+			render(w, `
 		{{define "title"}}Index{{end}}
 		{{define "body"}}
 		<ul>
@@ -238,17 +247,19 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 		</ul>
 		{{end}}
 		`, links)
-	default:
-		w.WriteHeader(http.StatusMethodNotAllowed)
+		default:
+			w.WriteHeader(http.StatusMethodNotAllowed)
+		}
 	}
 }
 
-func handleDownload(w http.ResponseWriter, r *http.Request) {
-	url := r.FormValue("url")
+func handleDownload(session *db.Session) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		url := r.FormValue("url")
 
-	switch r.Method {
-	case "GET":
-		render(w, `
+		switch r.Method {
+		case "GET":
+			render(w, `
 		{{define "title"}}Download{{end}}
 		{{define "body"}}
 		<form method="POST">
@@ -265,54 +276,56 @@ func handleDownload(w http.ResponseWriter, r *http.Request) {
 		<img src="{{.url}}">
 		{{end}}
 		`, map[string]interface{}{
-			"url": url,
-		})
+				"url": url,
+			})
 
-	case "POST":
-		tags := tagsFromString(r.FormValue("tags"))
+		case "POST":
+			tags := tagsFromString(r.FormValue("tags"))
 
-		resp, err := http.Get(url)
-		if err != nil {
-			panic(err)
-		}
-
-		storedImage := addImage(resp.Body, tags, url)
-
-		w.Header()["Location"] = []string{storedImage.Link()}
-		w.WriteHeader(http.StatusFound)
-
-	default:
-		w.WriteHeader(http.StatusMethodNotAllowed)
-	}
-}
-
-func handleUpload(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case "POST":
-		tags := tagsFromString(r.FormValue("tags"))
-
-		err := r.ParseMultipartForm(int64(math.Pow(2, 29))) // 512MB
-		if err != nil {
-			panic(err)
-		}
-
-		for _, file := range r.MultipartForm.File["file"] {
-			f, err := file.Open()
+			resp, err := http.Get(url)
 			if err != nil {
 				panic(err)
 			}
-			defer f.Close()
 
-			addImage(f, tags, file.Filename)
+			storedImage := addImage(session, resp.Body, tags, url)
+
+			w.Header()["Location"] = []string{storedImage.Link()}
+			w.WriteHeader(http.StatusFound)
+
+		default:
+			w.WriteHeader(http.StatusMethodNotAllowed)
 		}
+	}
+}
 
-		w.Header()["Location"] = []string{
-			"/search?q=" + url.QueryEscape(strings.Join(tags, " ")),
-		}
-		w.WriteHeader(http.StatusFound)
+func handleUpload(session *db.Session) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case "POST":
+			tags := tagsFromString(r.FormValue("tags"))
 
-	case "GET":
-		render(w, `
+			err := r.ParseMultipartForm(int64(math.Pow(2, 29))) // 512MB
+			if err != nil {
+				panic(err)
+			}
+
+			for _, file := range r.MultipartForm.File["file"] {
+				f, err := file.Open()
+				if err != nil {
+					panic(err)
+				}
+				defer f.Close()
+
+				addImage(session, f, tags, file.Filename)
+			}
+
+			w.Header()["Location"] = []string{
+				"/search?q=" + url.QueryEscape(strings.Join(tags, " ")),
+			}
+			w.WriteHeader(http.StatusFound)
+
+		case "GET":
+			render(w, `
 		{{define "title"}}Upload{{end}}
 		{{define "body"}}
 		<form method="POST" enctype="multipart/form-data">
@@ -329,18 +342,20 @@ func handleUpload(w http.ResponseWriter, r *http.Request) {
 		{{end}}
 		`, nil)
 
-	default:
-		w.WriteHeader(http.StatusMethodNotAllowed)
+		default:
+			w.WriteHeader(http.StatusMethodNotAllowed)
+		}
 	}
 }
 
-func handleRename(w http.ResponseWriter, r *http.Request) {
-	from := r.FormValue("from")
-	to := r.FormValue("to")
+func handleRename(session *db.Session) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		from := r.FormValue("from")
+		to := r.FormValue("to")
 
-	switch r.Method {
-	case "GET":
-		render(w, `
+		switch r.Method {
+		case "GET":
+			render(w, `
 		{{define "title"}}Rename{{end}}
 		{{define "body"}}
 		<form method="POST">
@@ -356,40 +371,41 @@ func handleRename(w http.ResponseWriter, r *http.Request) {
 		</form>
 		{{end}}
 		`, map[string]interface{}{
-			"from": from,
-			"to":   to,
-		})
+				"from": from,
+				"to":   to,
+			})
 
-	case "POST":
-		query := parseQuery(from)
+		case "POST":
+			query := parseQuery(from)
 
-		images, err := session.Find(query)
-		if err != nil {
-			panic(err)
-		}
-
-		for _, image := range images {
-			tags := []string{}
-
-			for _, tag := range image.Tags {
-				if tag == from {
-					tags = append(tags, to)
-				} else {
-					tags = append(tags, tag)
-				}
+			images, err := session.Find(query)
+			if err != nil {
+				panic(err)
 			}
 
-			image.SetTags(tags)
+			for _, image := range images {
+				tags := []string{}
 
-			image.Update(session)
+				for _, tag := range image.Tags {
+					if tag == from {
+						tags = append(tags, to)
+					} else {
+						tags = append(tags, tag)
+					}
+				}
+
+				image.SetTags(tags)
+
+				image.Update(session)
+			}
+
+			w.Header()["Location"] = []string{
+				"/search?q=" + url.QueryEscape(to),
+			}
+			w.WriteHeader(http.StatusFound)
+
+		default:
+			w.WriteHeader(http.StatusMethodNotAllowed)
 		}
-
-		w.Header()["Location"] = []string{
-			"/search?q=" + url.QueryEscape(to),
-		}
-		w.WriteHeader(http.StatusFound)
-
-	default:
-		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
 }
