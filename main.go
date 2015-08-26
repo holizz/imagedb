@@ -46,6 +46,7 @@ func main() {
 
 	// API
 	http.Handle("/api/tags", common.ThenFunc(handleApiTags(session)))
+	http.Handle("/api/search", common.ThenFunc(handleApiSearch(session)))
 
 	log.Fatalln(http.ListenAndServe(":"+port, nil))
 }
@@ -442,6 +443,30 @@ func handleApiTags(session *db.Session) func(http.ResponseWriter, *http.Request)
 			}{
 				Num:     int64(len(tags)),
 				Results: tags,
+			})
+		default:
+			w.WriteHeader(http.StatusMethodNotAllowed)
+		}
+	}
+}
+
+func handleApiSearch(session *db.Session) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case "GET":
+			query := parseQuery(r.FormValue("q"))
+
+			images, err := session.Find(query)
+			if err != nil {
+				panic(err)
+			}
+
+			renderJson(w, struct {
+				Num     int64
+				Results []db.Image
+			}{
+				Num:     int64(len(images)),
+				Results: images,
 			})
 		default:
 			w.WriteHeader(http.StatusMethodNotAllowed)
