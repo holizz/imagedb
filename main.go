@@ -44,6 +44,9 @@ func main() {
 	http.Handle("/search", common.ThenFunc(handleSearch(session)))
 	http.Handle("/rename", common.ThenFunc(handleRename(session)))
 
+	// API
+	http.Handle("/api/tags", common.ThenFunc(handleApiTags(session)))
+
 	log.Fatalln(http.ListenAndServe(":"+port, nil))
 }
 
@@ -404,6 +407,42 @@ func handleRename(session *db.Session) func(http.ResponseWriter, *http.Request) 
 			}
 			w.WriteHeader(http.StatusFound)
 
+		default:
+			w.WriteHeader(http.StatusMethodNotAllowed)
+		}
+	}
+}
+
+func handleApiTags(session *db.Session) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case "GET":
+			images, err := session.Find(nil)
+			if err != nil {
+				panic(err)
+			}
+
+			_tags := map[db.Tag]bool{}
+			for _, image := range images {
+				for _, tag := range image.Tags {
+					_tags[db.Tag(tag)] = true
+				}
+			}
+
+			tags := []db.Tag{}
+			for tag := range _tags {
+				tags = append(tags, tag)
+			}
+
+			sort.Sort(db.TagByName(tags))
+
+			renderJson(w, struct {
+				Num     int64
+				Results []db.Tag
+			}{
+				Num:     int64(len(tags)),
+				Results: tags,
+			})
 		default:
 			w.WriteHeader(http.StatusMethodNotAllowed)
 		}

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"io"
@@ -155,6 +156,14 @@ func render(w io.Writer, tmpl string, context interface{}) {
 
 	err = template.Must(t.Parse(tmpl)).Execute(w, context)
 
+	if err != nil {
+		panic(err)
+	}
+}
+
+func renderJson(w io.Writer, data interface{}) {
+	e := json.NewEncoder(w)
+	err := e.Encode(data)
 	if err != nil {
 		panic(err)
 	}
