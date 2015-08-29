@@ -22,65 +22,74 @@ func listImages(w http.ResponseWriter, r *http.Request, session *db.Session, q s
 	render(w, `
 	{{define "title"}}List of images{{end}}
 	{{define "body"}}
-	<core-drawer-panel>
-		<core-header-panel drawer>
-			<core-toolbar id="navheader">
-				<span>Menu</span>
-			</core-toolbar>
-			<core-menu>
-				{{range .images}}
-					<core-item>
-						<core-image src="{{.RawLink}}" preload sizing="contain" style="width: 100px; height: 100px"></core-image>
-					</core-item>
-				{{end}}
-			</core-menu>
-		</core-header-panel>
 
-		<core-header-panel main>
-			<core-toolbar id="mainheader">
+	<paper-drawer-panel>
+		<paper-header-panel drawer>
+			<paper-toolbar id="navheader">
+				<span>Menu</span>
+			</paper-toolbar>
+			<paper-menu>
+
+				{{range .images}}
+					<paper-item>
+						<iron-image src="{{.RawLink}}" preload sizing="contain" style="width: 100px; height: 100px"></iron-image>
+					</paper-item>
+				{{end}}
+
+			</paper-menu>
+		</paper-header-panel>
+
+		<paper-header-panel main>
+			<paper-toolbar id="mainheader">
 				<form action="/search">
 					<input type="search" name="q" value="{{.q}}">
 					<input type="submit" value="Search">
 				</form>
-			</core-toolbar>
-			<core-pages>
+			</paper-toolbar>
+			<iron-pages>
+
 				{{range .images}}
 					<div>
 						<a href="{{.Link}}">
-							<core-image src="{{.RawLink}}" preload sizing="contain" style="width: 100%; height: 100%"></core-image>
+							<iron-image src="{{.RawLink}}" preload sizing="contain" style="width: 100%; height: 100%"></iron-image>
 						</a>
 					</div>
 				{{end}}
-			</core-pages>
-		</core-header-panel>
 
-	</core-drawer-panel>
+			</iron-pages>
+		</paper-header-panel>
+
+	</paper-drawer-panel>
 
 	<script>
-		var menu = document.querySelector('core-menu')
-		var pages = document.querySelector('core-pages')
+		var menu = document.querySelector('paper-menu')
+		var pages = document.querySelector('iron-pages')
 
-		menu.addEventListener('core-select', function() {
-			pages.selected = this.selected
-
-			// fix height
-			pages.style.height = (pages.parentElement.offsetHeight - pages.parentElement.firstElementChild.offsetHeight) + "px"
+		menu.addEventListener('iron-select', function() {
+			pages.select(this.selected)
 		})
+
 		document.onkeyup = function(e){
 			var move = 0
 			if (e.keyIdentifier === 'U+004B') {
-				move = -1
+				menu.selectPrevious()
 			} else if (e.keyIdentifier === 'U+004A') {
-				move = 1
+				menu.selectNext()
 			}
-			menu.selected = (menu.selected + move + menu.items.length) % menu.items.length
 		}
+
+		menu.select(0)
 	</script>
 
 	<style>
-	html /deep/ core-pages {
-		overflow: hidden;
-	}
+		/* fix height on images */
+		#mainPanel,
+		#mainContainer,
+		html /deep/ paper-header-panel[main],
+		html /deep/ iron-pages,
+		html /deep/ iron-pages div {
+			height: 100%;
+		}
 	</style>
 	{{end}}
 	`, map[string]interface{}{
@@ -143,12 +152,12 @@ func render(w io.Writer, tmpl string, context interface{}) {
 	<html>
 		<head>
 			<title>{{template "title" .}}</title>
-			<link rel="import" href="/bower_components/core-pages/core-pages.html">
-			<link rel="import" href="/bower_components/core-menu/core-menu.html">
-			<link rel="import" href="/bower_components/core-item/core-item.html">
-			<link rel="import" href="/bower_components/core-image/core-image.html">
-			<link rel="import" href="/bower_components/core-drawer-panel/core-drawer-panel.html">
-			<link rel="import" href="/bower_components/core-header-panel/core-header-panel.html">
+			<link rel="import" href="/bower_components/iron-pages/iron-pages.html">
+			<link rel="import" href="/bower_components/paper-menu/paper-menu.html">
+			<link rel="import" href="/bower_components/paper-item/paper-item.html">
+			<link rel="import" href="/bower_components/iron-image/iron-image.html">
+			<link rel="import" href="/bower_components/paper-drawer-panel/paper-drawer-panel.html">
+			<link rel="import" href="/bower_components/paper-header-panel/paper-header-panel.html">
 		</head>
 
 		<body unresolved fullbleed>
