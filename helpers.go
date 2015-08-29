@@ -13,7 +13,12 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
-func listImages(w http.ResponseWriter, r *http.Request, images []db.Image) {
+func listImages(w http.ResponseWriter, r *http.Request, session *db.Session, q string) {
+	images, err := session.Find(parseQuery(q))
+	if err != nil {
+		panic(err)
+	}
+
 	render(w, `
 	{{define "title"}}List of images{{end}}
 	{{define "body"}}
@@ -170,6 +175,16 @@ func renderJson(w io.Writer, data interface{}) {
 }
 
 func parseQuery(s string) bson.M {
+	if s == ":all" {
+		return bson.M{}
+	}
+
+	if s == ":untagged" {
+		return bson.M{
+			"tags": []string{},
+		}
+	}
+
 	tags := tagsFromString(s)
 	return bson.M{
 		"tags": bson.M{

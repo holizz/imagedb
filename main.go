@@ -12,7 +12,6 @@ import (
 
 	"github.com/holizz/imagedb/db"
 	"github.com/justinas/alice"
-	"gopkg.in/mgo.v2/bson"
 )
 
 func main() {
@@ -55,12 +54,7 @@ func handleAll(session *db.Session) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "GET":
-			images, err := session.Find(nil)
-			if err != nil {
-				panic(err)
-			}
-
-			listImages(w, r, images)
+			listImages(w, r, session, ":all")
 		default:
 			w.WriteHeader(http.StatusMethodNotAllowed)
 		}
@@ -190,14 +184,7 @@ func handleSearch(session *db.Session) func(http.ResponseWriter, *http.Request) 
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "GET":
-			query := parseQuery(r.FormValue("q"))
-
-			images, err := session.Find(query)
-			if err != nil {
-				panic(err)
-			}
-
-			listImages(w, r, images)
+			listImages(w, r, session, r.FormValue("q"))
 		default:
 			w.WriteHeader(http.StatusMethodNotAllowed)
 		}
@@ -208,14 +195,7 @@ func handleUntagged(session *db.Session) func(http.ResponseWriter, *http.Request
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "GET":
-			images, err := session.Find(bson.M{
-				"tags": []string{},
-			})
-			if err != nil {
-				panic(err)
-			}
-
-			listImages(w, r, images)
+			listImages(w, r, session, ":untagged")
 		default:
 			w.WriteHeader(http.StatusMethodNotAllowed)
 		}
