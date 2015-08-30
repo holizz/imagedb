@@ -30,8 +30,15 @@ func main() {
 
 	common := alice.New(handleLogging)
 
+	// Static
+	http.Handle("/assets/", common.Then(http.StripPrefix("/assets/", http.FileServer(http.Dir("assets")))))
 	http.Handle("/bower_components/", common.Then(http.StripPrefix("/bower_components/", http.FileServer(http.Dir("bower_components")))))
 
+	// API
+	http.Handle("/api/tags", common.ThenFunc(handleApiTags(session)))
+	http.Handle("/api/search", common.ThenFunc(handleApiSearch(session)))
+
+	// Main handlers
 	http.Handle("/", common.ThenFunc(handleRoot(session)))
 	http.Handle("/all", common.ThenFunc(handleAll(session)))
 	http.Handle("/_image/", common.ThenFunc(handleRawImage(session)))
@@ -42,10 +49,6 @@ func main() {
 	http.Handle("/upload", common.ThenFunc(handleUpload(session)))
 	http.Handle("/search", common.ThenFunc(handleSearch(session)))
 	http.Handle("/rename", common.ThenFunc(handleRename(session)))
-
-	// API
-	http.Handle("/api/tags", common.ThenFunc(handleApiTags(session)))
-	http.Handle("/api/search", common.ThenFunc(handleApiSearch(session)))
 
 	log.Fatalln(http.ListenAndServe(":"+port, nil))
 }
