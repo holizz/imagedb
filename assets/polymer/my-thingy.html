@@ -63,7 +63,6 @@
         var params = window.location.search.substring(1).split('&').reduce(function(a,b){var c=b.split('=');a[c[0]]=c[1];return a}, {})
         this.query = params['q']
         this.searchParams = {q: this.query}
-        console.log(this.query)
 
         var menu = this.$.menu
         var pages = this.$.pages
@@ -74,9 +73,9 @@
 
         document.onkeyup = function(e){
           var move = 0
-          if (e.keyIdentifier === 'U+004B') {
+          if (e.keyIdentifier === 'U+004B' || e.keyIdentifier === 'Up') {
             menu.selectPrevious()
-          } else if (e.keyIdentifier === 'U+004A') {
+          } else if (e.keyIdentifier === 'U+004A' || e.keyIdentifier === 'Down') {
             menu.selectNext()
           }
         }
