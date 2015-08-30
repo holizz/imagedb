@@ -21,7 +21,7 @@ func listImages(w http.ResponseWriter, r *http.Request, session *db.Session, q s
 	<dom-module id="my-thingy">
 
 		<template>
-			<iron-ajax url="/api/search" params='{"q": "{{.q}}"}' last-response="{{"{{data}}"}}" auto></iron-ajax>
+			<iron-ajax url="/api/search" params="{{"{{searchParams}}"}}" last-response="{{"{{data}}"}}" auto></iron-ajax>
 			<span>{{"{{data.Num}}"}}</span>
 
 			<paper-drawer-panel>
@@ -43,7 +43,7 @@ func listImages(w http.ResponseWriter, r *http.Request, session *db.Session, q s
 				<paper-header-panel main>
 					<paper-toolbar id="mainheader">
 						<form action="/search">
-							<input type="search" name="q" value="{{.q}}" id="query">
+							<input type="search" name="q" value="{{"{{query}}"}}" id="query">
 							<input type="submit" value="Search">
 						</form>
 					</paper-toolbar>
@@ -69,7 +69,13 @@ func listImages(w http.ResponseWriter, r *http.Request, session *db.Session, q s
 				is: "my-thingy",
 				rawLink: function(x) { return '/_image/' + x },
 				link: function(x) { return '/image/' + x },
+				query: "",
 				ready: function () {
+					var params = window.location.search.substring(1).split('&').reduce(function(a,b){var c=b.split('=');a[c[0]]=c[1];return a}, {})
+					this.query = params['q']
+					this.searchParams = {q: this.query}
+					console.log(this.query)
+
 					var menu = this.$.menu
 					var pages = this.$.pages
 
@@ -105,9 +111,7 @@ func listImages(w http.ResponseWriter, r *http.Request, session *db.Session, q s
 
 	<my-thingy></my-thingy>
 	{{end}}
-	`, map[string]interface{}{
-		"q": r.FormValue("q"),
-	})
+	`, map[string]interface{}{})
 }
 
 func addImage(session *db.Session, imageReader io.Reader, tags []string, originalName string) db.Image {
