@@ -22,7 +22,7 @@
 
           <template is="dom-repeat" items="{{data.Results}}">
             <paper-item>
-              <iron-image src="{{rawLink(item.RawImage)}}" preload sizing="contain" style="width: 100px; height: 100px"></iron-image>
+              <iron-image src="{{rawLink(item.RawImage)}}" preload sizing="contain"></iron-image>
             </paper-item>
           </template>
 
@@ -93,6 +93,11 @@
     html /deep/ iron-pages,
     html /deep/ iron-pages div {
       height: 100%;
+    }
+
+    paper-item > iron-image {
+      width: 100px;
+      height: 100px;
     }
   </style>
 </dom-module>
