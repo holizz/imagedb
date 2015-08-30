@@ -60,7 +60,11 @@
       link: function(x) { return '/image/' + x },
       query: "",
       ready: function () {
-        var params = window.location.search.substring(1).split('&').reduce(function(a,b){var c=b.split('=');a[c[0]]=c[1];return a}, {})
+        var params = window.location.search.substring(1).split('&').reduce(function(a,b){
+            var c=b.split('=')
+            a[c[0]]=decodeURIComponent(c[1].replace(/\+/g, ' '))
+            return a
+            }, {})
         this.query = params['q']
         this.searchParams = {q: this.query}
 
