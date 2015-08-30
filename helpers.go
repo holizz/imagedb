@@ -3,98 +3,110 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"html/template"
 	"io"
 	"math"
 	"net/http"
 	"strings"
+	"text/template"
 
 	"github.com/holizz/imagedb/db"
 	"gopkg.in/mgo.v2/bson"
 )
 
 func listImages(w http.ResponseWriter, r *http.Request, session *db.Session, q string) {
-	images, err := session.Find(parseQuery(q))
-	if err != nil {
-		panic(err)
-	}
-
 	render(w, `
 	{{define "title"}}List of images{{end}}
 	{{define "body"}}
 
-	<paper-drawer-panel>
-		<paper-header-panel drawer>
-			<paper-toolbar id="navheader">
-				<span>Menu</span>
-			</paper-toolbar>
-			<paper-menu>
+	<dom-module id="my-thingy">
 
-				{{range .images}}
-					<paper-item>
-						<iron-image src="{{.RawLink}}" preload sizing="contain" style="width: 100px; height: 100px"></iron-image>
-					</paper-item>
-				{{end}}
+		<template>
+			<iron-ajax url="/api/search" params='{"q": "{{.q}}"}' last-response="{{"{{data}}"}}" auto></iron-ajax>
+			<span>{{"{{data.Num}}"}}</span>
 
-			</paper-menu>
-		</paper-header-panel>
+			<paper-drawer-panel>
+				<paper-header-panel drawer>
+					<paper-toolbar id="navheader">
+						<span>Menu</span>
+					</paper-toolbar>
+					<paper-menu id="menu">
 
-		<paper-header-panel main>
-			<paper-toolbar id="mainheader">
-				<form action="/search">
-					<input type="search" name="q" value="{{.q}}">
-					<input type="submit" value="Search">
-				</form>
-			</paper-toolbar>
-			<iron-pages>
+						<template is="dom-repeat" items="{{"{{data.Results}}"}}">
+							<paper-item>
+								<iron-image src="{{"{{rawLink(item.RawImage)}}"}}" preload sizing="contain" style="width: 100px; height: 100px"></iron-image>
+							</paper-item>
+						</template>
 
-				{{range .images}}
-					<div>
-						<a href="{{.Link}}">
-							<iron-image src="{{.RawLink}}" preload sizing="contain" style="width: 100%; height: 100%"></iron-image>
-						</a>
-					</div>
-				{{end}}
+					</paper-menu>
+				</paper-header-panel>
 
-			</iron-pages>
-		</paper-header-panel>
+				<paper-header-panel main>
+					<paper-toolbar id="mainheader">
+						<form action="/search">
+							<input type="search" name="q" value="{{.q}}" id="query">
+							<input type="submit" value="Search">
+						</form>
+					</paper-toolbar>
+					<iron-pages id="pages">
 
-	</paper-drawer-panel>
+						<template is="dom-repeat" items="{{"{{data.Results}}"}}">
+							<div>
+								<a href="{{"{{link(item.ID)}}"}}">
+									<iron-image src="{{"{{rawLink(item.RawImage)}}"}}" preload sizing="contain" style="width: 100%; height: 100%"></iron-image>
+								</a>
+							</div>
+						</template>
 
-	<script>
-		var menu = document.querySelector('paper-menu')
-		var pages = document.querySelector('iron-pages')
+					</iron-pages>
+				</paper-header-panel>
 
-		menu.addEventListener('iron-select', function() {
-			pages.select(this.selected)
-		})
+			</paper-drawer-panel>
 
-		document.onkeyup = function(e){
-			var move = 0
-			if (e.keyIdentifier === 'U+004B') {
-				menu.selectPrevious()
-			} else if (e.keyIdentifier === 'U+004A') {
-				menu.selectNext()
+		</template>
+
+		<script>
+			Polymer({
+				is: "my-thingy",
+				rawLink: function(x) { return '/_image/' + x },
+				link: function(x) { return '/image/' + x },
+				ready: function () {
+					var menu = this.$.menu
+					var pages = this.$.pages
+
+					menu.addEventListener('iron-select', function() {
+						pages.select(this.selected)
+					})
+
+					document.onkeyup = function(e){
+						var move = 0
+						if (e.keyIdentifier === 'U+004B') {
+							menu.selectPrevious()
+						} else if (e.keyIdentifier === 'U+004A') {
+							menu.selectNext()
+						}
+					}
+
+					menu.select(0)
+				}
+			})
+		</script>
+
+		<style>
+			/* fix height on images */
+			#mainPanel,
+			#mainContainer,
+			html /deep/ paper-header-panel[main],
+			html /deep/ iron-pages,
+			html /deep/ iron-pages div {
+				height: 100%;
 			}
-		}
+		</style>
+	</dom-module>
 
-		menu.select(0)
-	</script>
-
-	<style>
-		/* fix height on images */
-		#mainPanel,
-		#mainContainer,
-		html /deep/ paper-header-panel[main],
-		html /deep/ iron-pages,
-		html /deep/ iron-pages div {
-			height: 100%;
-		}
-	</style>
+	<my-thingy></my-thingy>
 	{{end}}
 	`, map[string]interface{}{
-		"q":      r.FormValue("q"),
-		"images": images,
+		"q": r.FormValue("q"),
 	})
 }
 
@@ -152,7 +164,10 @@ func render(w io.Writer, tmpl string, context interface{}) {
 	<html>
 		<head>
 			<title>{{template "title" .}}</title>
+			<script src="/bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
+			<link rel="import" href="/bower_components/polymer/polymer.html">
 			<link rel="import" href="/bower_components/iron-pages/iron-pages.html">
+			<link rel="import" href="/bower_components/iron-ajax/iron-ajax.html">
 			<link rel="import" href="/bower_components/paper-menu/paper-menu.html">
 			<link rel="import" href="/bower_components/paper-item/paper-item.html">
 			<link rel="import" href="/bower_components/iron-image/iron-image.html">
@@ -175,7 +190,8 @@ func render(w io.Writer, tmpl string, context interface{}) {
 	}
 }
 
-func renderJson(w io.Writer, data interface{}) {
+func renderJson(w http.ResponseWriter, data interface{}) {
+	w.Header().Set("Content-Type", "application/json")
 	e := json.NewEncoder(w)
 	err := e.Encode(data)
 	if err != nil {

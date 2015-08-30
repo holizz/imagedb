@@ -14,6 +14,7 @@
     "tests"
   ],
   "dependencies": {
+    "iron-ajax": "PolymerElements/iron-ajax#~1.0.4",
     "iron-image": "PolymerElements/iron-image#~1.0.2",
     "iron-pages": "PolymerElements/iron-pages#~1.0.3",
     "paper-drawer-panel": "PolymerElements/paper-drawer-panel#~1.0.3",
