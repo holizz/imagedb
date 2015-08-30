@@ -3,11 +3,11 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"io"
 	"math"
 	"net/http"
 	"strings"
-	"text/template"
 
 	"github.com/holizz/imagedb/db"
 	"gopkg.in/mgo.v2/bson"
