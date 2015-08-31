@@ -162,26 +162,12 @@ func handleRoot(session *db.Session) func(http.ResponseWriter, *http.Request) {
 				return
 			}
 
-			links := []string{
-				"/tags",
-				"/search",
-				"/search?q=:all",
-				"/search?q=:untagged",
-				"/download",
-				"/upload",
-				"/rename",
-			}
-
 			render(w, `
 			{{define "title"}}Index{{end}}
 			{{define "body"}}
-			<ul>
-				{{range .}}
-					<li><a href="{{.}}">{{.}}</a></li>
-				{{end}}
-			</ul>
+			<root-page></root-page>
 			{{end}}
-			`, links)
+			`, nil)
 		default:
 			w.WriteHeader(http.StatusMethodNotAllowed)
 		}

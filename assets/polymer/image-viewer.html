@@ -57,7 +57,6 @@
       is: "image-viewer",
       rawLink: function(x) { return '/_image/' + x },
       link: function(x) { return '/image/' + x },
-      query: "",
       ready: function () {
         var params = window.location.search.substring(1).split('&').reduce(function(a,b){
             var c=b.split('=')

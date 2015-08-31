@@ -63,6 +63,7 @@ func render(w io.Writer, tmpl string, context interface{}) {
 			<link rel="import" href="/bower_components/polymer/polymer.html">
 			<link rel="import" href="/assets/polymer/image-viewer.html">
 			<link rel="import" href="/assets/polymer/tag-list.html">
+			<link rel="import" href="/assets/polymer/root-page.html">
 		</head>
 
 		<body unresolved fullbleed>
