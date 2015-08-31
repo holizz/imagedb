@@ -104,7 +104,7 @@ func handleImage(session *db.Session) func(http.ResponseWriter, *http.Request) {
 		`, image)
 
 		case "POST":
-			image.SetTags(tagsFromString(r.FormValue("tags")))
+			image.SetTags(db.TagsFromString(r.FormValue("tags")))
 
 			err := session.UpdateId(hexId, image)
 			if err != nil {
@@ -124,7 +124,7 @@ func handleTagsList(session *db.Session) func(http.ResponseWriter, *http.Request
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "GET":
-			images, err := session.Find(nil)
+			images, err := session.Find(":all")
 			if err != nil {
 				panic(err)
 			}
@@ -243,7 +243,7 @@ func handleDownload(session *db.Session) func(http.ResponseWriter, *http.Request
 			})
 
 		case "POST":
-			tags := tagsFromString(r.FormValue("tags"))
+			tags := db.TagsFromString(r.FormValue("tags"))
 
 			resp, err := http.Get(url)
 			if err != nil {
@@ -265,7 +265,7 @@ func handleUpload(session *db.Session) func(http.ResponseWriter, *http.Request) 
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "POST":
-			tags := tagsFromString(r.FormValue("tags"))
+			tags := db.TagsFromString(r.FormValue("tags"))
 
 			err := r.ParseMultipartForm(int64(math.Pow(2, 29))) // 512MB
 			if err != nil {
@@ -339,9 +339,7 @@ func handleRename(session *db.Session) func(http.ResponseWriter, *http.Request) 
 			})
 
 		case "POST":
-			query := parseQuery(from)
-
-			images, err := session.Find(query)
+			images, err := session.Find(from)
 			if err != nil {
 				panic(err)
 			}
@@ -377,7 +375,7 @@ func handleApiTags(session *db.Session) func(http.ResponseWriter, *http.Request)
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "GET":
-			images, err := session.Find(nil)
+			images, err := session.Find(":all")
 			if err != nil {
 				panic(err)
 			}
@@ -413,9 +411,7 @@ func handleApiSearch(session *db.Session) func(http.ResponseWriter, *http.Reques
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "GET":
-			query := parseQuery(r.FormValue("q"))
-
-			images, err := session.Find(query)
+			images, err := session.Find(r.FormValue("q"))
 			if err != nil {
 				panic(err)
 			}

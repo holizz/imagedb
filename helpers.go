@@ -7,7 +7,6 @@ import (
 	"io"
 	"math"
 	"net/http"
-	"strings"
 
 	"github.com/holizz/imagedb/db"
 	"gopkg.in/mgo.v2/bson"
@@ -62,16 +61,6 @@ func addImage(session *db.Session, imageReader io.Reader, tags []string, origina
 	return storedImage
 }
 
-func tagsFromString(s string) []string {
-	tags := []string{}
-	for _, t := range strings.Split(s, " ") {
-		if t != "" {
-			tags = append(tags, t)
-		}
-	}
-	return tags
-}
-
 func render(w io.Writer, tmpl string, context interface{}) {
 	t, err := template.New("").Parse(`<!doctype html>
 	<html>
@@ -103,24 +92,5 @@ func renderJson(w http.ResponseWriter, data interface{}) {
 	err := e.Encode(data)
 	if err != nil {
 		panic(err)
-	}
-}
-
-func parseQuery(s string) bson.M {
-	if s == ":all" {
-		return bson.M{}
-	}
-
-	if s == ":untagged" {
-		return bson.M{
-			"tags": []string{},
-		}
-	}
-
-	tags := tagsFromString(s)
-	return bson.M{
-		"tags": bson.M{
-			"$all": tags,
-		},
 	}
 }

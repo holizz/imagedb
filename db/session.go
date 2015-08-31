@@ -35,11 +35,11 @@ func (s *Session) Close() {
 	s.mongo.Close()
 }
 
-func (s *Session) Find(query bson.M) ([]Image, error) {
+func (s *Session) Find(query string) ([]Image, error) {
 	var images []Image
 	c := s.mongo.DB("imagedb").C("images")
 
-	err := c.Find(query).All(&images)
+	err := c.Find(parseQuery(query)).All(&images)
 	if err != nil {
 		return nil, fmt.Errorf("(*Session) Find: %v", err)
 	}
