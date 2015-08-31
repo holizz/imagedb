@@ -124,46 +124,12 @@ func handleTagsList(session *db.Session) func(http.ResponseWriter, *http.Request
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "GET":
-			images, err := session.Find(":all")
-			if err != nil {
-				panic(err)
-			}
-
-			_tags := map[db.Tag]bool{}
-			for _, image := range images {
-				for _, tag := range image.Tags {
-					_tags[db.Tag(tag)] = true
-				}
-			}
-
-			tags := []db.Tag{}
-			for tag := range _tags {
-				tags = append(tags, tag)
-			}
-
-			sort.Sort(db.TagByName(tags))
-
 			render(w, `
-			{{define "title"}}Tags list{{end}}
+			{{define "title"}}Tag list{{end}}
 			{{define "body"}}
-			<table>
-				<tbody>
-					<tr>
-						<th>Tag</th>
-						<th>Actions</th>
-					</tr>
-					{{range .}}
-						<tr>
-							<td><a href="{{.Link}}">{{.}}</a></td>
-							<td>
-								<a href="/rename?from={{.}}">Rename</a>
-							</td>
-						</tr>
-					{{end}}
-				</tbody>
-			</table>
+			<tag-list></tag-list>
 			{{end}}
-			`, tags)
+			`, nil)
 		default:
 			w.WriteHeader(http.StatusMethodNotAllowed)
 		}
@@ -177,7 +143,6 @@ func handleSearch(session *db.Session) func(http.ResponseWriter, *http.Request) 
 			render(w, `
 			{{define "title"}}List of images{{end}}
 			{{define "body"}}
-
 			<image-viewer></image-viewer>
 			{{end}}
 			`, nil)

@@ -1,0 +1,40 @@
+<link rel="import" href="/bower_components/polymer/polymer.html">
+<link rel="import" href="/bower_components/iron-ajax/iron-ajax.html">
+
+<dom-module id="tag-list">
+
+  <template>
+    <iron-ajax url="/api/tags" last-response="{{data}}" auto></iron-ajax>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Tag</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <template is="dom-repeat" items="{{data.Results}}">
+          <tr>
+            <td><a href="{{tagLink(item)}}">{{item}}</a></td>
+            <td>
+              <a href="{{renameLink(item)}}">Rename</a>
+            </td>
+          </tr>
+        </template>
+      </tbody>
+    </table>
+
+  </template>
+
+  <script>
+    Polymer({
+      is: "tag-list",
+      tagLink: function(x) { return '/search?q=' + x },
+      renameLink: function(x) { return '/rename?from=' + x },
+    })
+  </script>
+
+  <style>
+  </style>
+</dom-module>

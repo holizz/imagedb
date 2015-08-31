@@ -62,6 +62,7 @@ func render(w io.Writer, tmpl string, context interface{}) {
 			<script src="/bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
 			<link rel="import" href="/bower_components/polymer/polymer.html">
 			<link rel="import" href="/assets/polymer/image-viewer.html">
+			<link rel="import" href="/assets/polymer/tag-list.html">
 		</head>
 
 		<body unresolved fullbleed>
