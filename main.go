@@ -174,7 +174,14 @@ func handleSearch(session *db.Session) func(http.ResponseWriter, *http.Request) 
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "GET":
-			listImages(w, r, session, r.FormValue("q"))
+			render(w, `
+			{{define "title"}}List of images{{end}}
+			{{define "body"}}
+
+			<image-viewer></image-viewer>
+			{{end}}
+			`, map[string]interface{}{})
+
 		default:
 			w.WriteHeader(http.StatusMethodNotAllowed)
 		}

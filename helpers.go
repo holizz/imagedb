@@ -12,16 +12,6 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
-func listImages(w http.ResponseWriter, r *http.Request, session *db.Session, q string) {
-	render(w, `
-	{{define "title"}}List of images{{end}}
-	{{define "body"}}
-
-	<image-viewer></image-viewer>
-	{{end}}
-	`, map[string]interface{}{})
-}
-
 func addImage(session *db.Session, imageReader io.Reader, tags []string, originalName string) db.Image {
 	image := make([]byte, int(math.Pow(2, 22))+1)
 	n, err := io.ReadFull(imageReader, image)
