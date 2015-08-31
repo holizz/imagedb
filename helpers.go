@@ -43,7 +43,10 @@ func addImage(session *db.Session, imageReader io.Reader, tags []string, origina
 	defer rawImage.Close()
 
 	rawImage.SetContentType(mimeType)
-	rawImage.Write(image[:n])
+	_, err = rawImage.Write(image[:n])
+	if err != nil {
+		panic(err)
+	}
 
 	storedImage := db.Image{
 		ID:           bson.NewObjectId(),
