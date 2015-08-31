@@ -86,22 +86,22 @@ func handleImage(session *db.Session) func(http.ResponseWriter, *http.Request) {
 		switch r.Method {
 		case "GET":
 			render(w, `
-		{{define "title"}}Image{{end}}
-		{{define "body"}}
-		<form method="POST">
-			<dl>
-				<dt>Original name</dt>
-				<dd>{{.OriginalName}}</dd>
-				<dt>Tags</dt>
-				<dd>
-					<input type="text" name="tags" value="{{.TagsString}}" autofocus>
-				</dd>
-			</dl>
-			<input type="submit" value="Save">
-		</form>
-		<img src="{{.RawLink}}">
-		{{end}}
-		`, image)
+			{{define "title"}}Image{{end}}
+			{{define "body"}}
+			<form method="POST">
+				<dl>
+					<dt>Original name</dt>
+					<dd>{{.OriginalName}}</dd>
+					<dt>Tags</dt>
+					<dd>
+						<input type="text" name="tags" value="{{.TagsString}}" autofocus>
+					</dd>
+				</dl>
+				<input type="submit" value="Save">
+			</form>
+			<img src="{{.RawLink}}">
+			{{end}}
+			`, image)
 
 		case "POST":
 			image.SetTags(db.TagsFromString(r.FormValue("tags")))
@@ -144,26 +144,26 @@ func handleTagsList(session *db.Session) func(http.ResponseWriter, *http.Request
 			sort.Sort(db.TagByName(tags))
 
 			render(w, `
-		{{define "title"}}Tags list{{end}}
-		{{define "body"}}
-		<table>
-			<tbody>
-				<tr>
-					<th>Tag</th>
-					<th>Actions</th>
-				</tr>
-				{{range .}}
+			{{define "title"}}Tags list{{end}}
+			{{define "body"}}
+			<table>
+				<tbody>
 					<tr>
-						<td><a href="{{.Link}}">{{.}}</a></td>
-						<td>
-							<a href="/rename?from={{.}}">Rename</a>
-						</td>
+						<th>Tag</th>
+						<th>Actions</th>
 					</tr>
-				{{end}}
-			</tbody>
-		</table>
-		{{end}}
-		`, tags)
+					{{range .}}
+						<tr>
+							<td><a href="{{.Link}}">{{.}}</a></td>
+							<td>
+								<a href="/rename?from={{.}}">Rename</a>
+							</td>
+						</tr>
+					{{end}}
+				</tbody>
+			</table>
+			{{end}}
+			`, tags)
 		default:
 			w.WriteHeader(http.StatusMethodNotAllowed)
 		}
@@ -208,15 +208,15 @@ func handleRoot(session *db.Session) func(http.ResponseWriter, *http.Request) {
 			}
 
 			render(w, `
-		{{define "title"}}Index{{end}}
-		{{define "body"}}
-		<ul>
-			{{range .}}
-				<li><a href="{{.}}">{{.}}</a></li>
+			{{define "title"}}Index{{end}}
+			{{define "body"}}
+			<ul>
+				{{range .}}
+					<li><a href="{{.}}">{{.}}</a></li>
+				{{end}}
+			</ul>
 			{{end}}
-		</ul>
-		{{end}}
-		`, links)
+			`, links)
 		default:
 			w.WriteHeader(http.StatusMethodNotAllowed)
 		}
@@ -230,22 +230,22 @@ func handleDownload(session *db.Session) func(http.ResponseWriter, *http.Request
 		switch r.Method {
 		case "GET":
 			render(w, `
-		{{define "title"}}Download{{end}}
-		{{define "body"}}
-		<form method="POST">
-			<label>
-				URL
-				<input type="text" name="url" value="{{.url}}">
-			</label>
-			<label>
-				Tags
-				<input type="text" name="tags" autofocus>
-			</label>
-			<input type="submit">
-		</form>
-		<img src="{{.url}}">
-		{{end}}
-		`, map[string]interface{}{
+			{{define "title"}}Download{{end}}
+			{{define "body"}}
+			<form method="POST">
+				<label>
+					URL
+					<input type="text" name="url" value="{{.url}}">
+				</label>
+				<label>
+					Tags
+					<input type="text" name="tags" autofocus>
+				</label>
+				<input type="submit">
+			</form>
+			<img src="{{.url}}">
+			{{end}}
+			`, map[string]interface{}{
 				"url": url,
 			})
 
@@ -296,21 +296,21 @@ func handleUpload(session *db.Session) func(http.ResponseWriter, *http.Request) 
 
 		case "GET":
 			render(w, `
-		{{define "title"}}Upload{{end}}
-		{{define "body"}}
-		<form method="POST" enctype="multipart/form-data">
-			<label>
-				Files
-				<input type="file" name="file" multiple accept="image/*">
-			</label>
-			<label>
-				Tags
-				<input type="text" name="tags">
-			</label>
-			<input type="submit">
-		</form>
-		{{end}}
-		`, nil)
+			{{define "title"}}Upload{{end}}
+			{{define "body"}}
+			<form method="POST" enctype="multipart/form-data">
+				<label>
+					Files
+					<input type="file" name="file" multiple accept="image/*">
+				</label>
+				<label>
+					Tags
+					<input type="text" name="tags">
+				</label>
+				<input type="submit">
+			</form>
+			{{end}}
+			`, nil)
 
 		default:
 			w.WriteHeader(http.StatusMethodNotAllowed)
@@ -326,21 +326,21 @@ func handleRename(session *db.Session) func(http.ResponseWriter, *http.Request) 
 		switch r.Method {
 		case "GET":
 			render(w, `
-		{{define "title"}}Rename{{end}}
-		{{define "body"}}
-		<form method="POST">
-			<label>
-				From
-				<input type="text" name="from" value="{{.from}}">
-			</label>
-			<label>
-				To
-				<input type="text" name="to" value="{{.to}}">
-			</label>
-			<input type="submit">
-		</form>
-		{{end}}
-		`, map[string]interface{}{
+			{{define "title"}}Rename{{end}}
+			{{define "body"}}
+			<form method="POST">
+				<label>
+					From
+					<input type="text" name="from" value="{{.from}}">
+				</label>
+				<label>
+					To
+					<input type="text" name="to" value="{{.to}}">
+				</label>
+				<input type="submit">
+			</form>
+			{{end}}
+			`, map[string]interface{}{
 				"from": from,
 				"to":   to,
 			})
