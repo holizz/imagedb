@@ -64,7 +64,7 @@ func render(w io.Writer, tmpl string, context interface{}) {
 			<link rel="import" href="/assets/polymer/image-db.html">
 		</head>
 
-		<body unresolved fullbleed>
+		<body unresolved>
 
 			{{template "body" .}}
 
