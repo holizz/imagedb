@@ -1,0 +1,44 @@
+<link rel="import" href="/bower_components/polymer/polymer.html">
+<link rel="import" href="image-viewer.html">
+<link rel="import" href="tag-list.html">
+<link rel="import" href="root-page.html">
+<link rel="import" href="four-oh-four.html">
+
+<dom-module id="image-db">
+
+  <template>
+    <template is="dom-if" if="{{imageViewer}}">
+      <image-viewer></image-viewer>
+    </template>
+    <template is="dom-if" if="{{tagList}}">
+      <tag-list></tag-list>
+    </template>
+    <template is="dom-if" if="{{rootPage}}">
+      <root-page></root-page>
+    </template>
+    <template is="dom-if" if="{{fourOhFour}}">
+      <four-oh-four></four-oh-four>
+    </template>
+  </template>
+
+  <script>
+    Polymer({
+      is: "image-db",
+      ready: function () {
+        switch (window.location.pathname) {
+          case '/search': this.imageViewer = true
+          break
+          case '/tags': this.tagList = true
+          break
+          case '/': this.rootPage = true
+          break
+          default: this.fourOhFour = true
+          break
+        }
+      },
+    })
+  </script>
+
+  <style>
+  </style>
+</dom-module>

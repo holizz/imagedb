@@ -1,0 +1,32 @@
+<link rel="import" href="/bower_components/polymer/polymer.html">
+
+<dom-module id="root-page">
+
+  <template>
+    <ul>
+      <template is="dom-repeat" items="{{links}}">
+        <li><a href="{{item}}">{{item}}</a></li>
+      </template>
+    </ul>
+  </template>
+
+  <script>
+    Polymer({
+      is: "root-page",
+      ready: function(){
+        this.links = [
+          "/tags",
+          "/search",
+          "/search?q=:all",
+          "/search?q=:untagged",
+          "/download",
+          "/upload",
+          "/rename",
+        ]
+      },
+    })
+  </script>
+
+  <style>
+  </style>
+</dom-module>

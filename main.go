@@ -38,14 +38,16 @@ func main() {
 	http.Handle("/api/tags", common.ThenFunc(handleApiTags(session)))
 	http.Handle("/api/search", common.ThenFunc(handleApiSearch(session)))
 
-	// Main handlers
+	// Serve polymer app
 	http.Handle("/", common.ThenFunc(handleRoot(session)))
+
+	// Serve images
 	http.Handle("/_image/", common.ThenFunc(handleRawImage(session)))
+
+	// Soon-to-be-legacy handlers
 	http.Handle("/image/", common.ThenFunc(handleImage(session)))
-	http.Handle("/tags", common.ThenFunc(handleTagsList(session)))
 	http.Handle("/download", common.ThenFunc(handleDownload(session)))
 	http.Handle("/upload", common.ThenFunc(handleUpload(session)))
-	http.Handle("/search", common.ThenFunc(handleSearch(session)))
 	http.Handle("/rename", common.ThenFunc(handleRename(session)))
 
 	log.Fatalln(http.ListenAndServe(":"+port, nil))
@@ -120,52 +122,14 @@ func handleImage(session *db.Session) func(http.ResponseWriter, *http.Request) {
 	}
 }
 
-func handleTagsList(session *db.Session) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case "GET":
-			render(w, `
-			{{define "title"}}Tag list{{end}}
-			{{define "body"}}
-			<tag-list></tag-list>
-			{{end}}
-			`, nil)
-		default:
-			w.WriteHeader(http.StatusMethodNotAllowed)
-		}
-	}
-}
-
-func handleSearch(session *db.Session) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case "GET":
-			render(w, `
-			{{define "title"}}List of images{{end}}
-			{{define "body"}}
-			<image-viewer></image-viewer>
-			{{end}}
-			`, nil)
-
-		default:
-			w.WriteHeader(http.StatusMethodNotAllowed)
-		}
-	}
-}
-
 func handleRoot(session *db.Session) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "GET":
-			if r.URL.Path != "/" {
-				http.NotFoundHandler().ServeHTTP(w, r)
-				return
-			}
-
 			render(w, `
 			{{define "title"}}Index{{end}}
 			{{define "body"}}
-			<root-page></root-page>
+			<image-db></image-db>
 			{{end}}
 			`, nil)
 		default:
