@@ -180,7 +180,7 @@ func handleSearch(session *db.Session) func(http.ResponseWriter, *http.Request) 
 
 			<image-viewer></image-viewer>
 			{{end}}
-			`, map[string]interface{}{})
+			`, nil)
 
 		default:
 			w.WriteHeader(http.StatusMethodNotAllowed)
