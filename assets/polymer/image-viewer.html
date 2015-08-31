@@ -7,7 +7,7 @@
 <link rel="import" href="/bower_components/paper-drawer-panel/paper-drawer-panel.html">
 <link rel="import" href="/bower_components/paper-header-panel/paper-header-panel.html">
 
-<dom-module id="my-thingy">
+<dom-module id="image-viewer">
 
   <template>
     <iron-ajax url="/api/search" params="{{searchParams}}" last-response="{{data}}" auto></iron-ajax>
@@ -55,7 +55,7 @@
 
   <script>
     Polymer({
-      is: "my-thingy",
+      is: "image-viewer",
       rawLink: function(x) { return '/_image/' + x },
       link: function(x) { return '/image/' + x },
       query: "",

@@ -18,7 +18,7 @@ func listImages(w http.ResponseWriter, r *http.Request, session *db.Session, q s
 	{{define "title"}}List of images{{end}}
 	{{define "body"}}
 
-	<my-thingy></my-thingy>
+	<image-viewer></image-viewer>
 	{{end}}
 	`, map[string]interface{}{})
 }
@@ -79,7 +79,7 @@ func render(w io.Writer, tmpl string, context interface{}) {
 			<title>{{template "title" .}}</title>
 			<script src="/bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
 			<link rel="import" href="/bower_components/polymer/polymer.html">
-			<link rel="import" href="/assets/polymer/my-thingy.html">
+			<link rel="import" href="/assets/polymer/image-viewer.html">
 		</head>
 
 		<body unresolved fullbleed>
