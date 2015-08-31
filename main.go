@@ -40,28 +40,15 @@ func main() {
 
 	// Main handlers
 	http.Handle("/", common.ThenFunc(handleRoot(session)))
-	http.Handle("/all", common.ThenFunc(handleAll(session)))
 	http.Handle("/_image/", common.ThenFunc(handleRawImage(session)))
 	http.Handle("/image/", common.ThenFunc(handleImage(session)))
 	http.Handle("/tags", common.ThenFunc(handleTagsList(session)))
-	http.Handle("/untagged", common.ThenFunc(handleUntagged(session)))
 	http.Handle("/download", common.ThenFunc(handleDownload(session)))
 	http.Handle("/upload", common.ThenFunc(handleUpload(session)))
 	http.Handle("/search", common.ThenFunc(handleSearch(session)))
 	http.Handle("/rename", common.ThenFunc(handleRename(session)))
 
 	log.Fatalln(http.ListenAndServe(":"+port, nil))
-}
-
-func handleAll(session *db.Session) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case "GET":
-			listImages(w, r, session, ":all")
-		default:
-			w.WriteHeader(http.StatusMethodNotAllowed)
-		}
-	}
 }
 
 func handleRawImage(session *db.Session) func(http.ResponseWriter, *http.Request) {
@@ -194,17 +181,6 @@ func handleSearch(session *db.Session) func(http.ResponseWriter, *http.Request) 
 	}
 }
 
-func handleUntagged(session *db.Session) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case "GET":
-			listImages(w, r, session, ":untagged")
-		default:
-			w.WriteHeader(http.StatusMethodNotAllowed)
-		}
-	}
-}
-
 func handleRoot(session *db.Session) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
@@ -215,10 +191,10 @@ func handleRoot(session *db.Session) func(http.ResponseWriter, *http.Request) {
 			}
 
 			links := []string{
-				"/all",
 				"/tags",
 				"/search",
-				"/untagged",
+				"/search?q=:all",
+				"/search?q=:untagged",
 				"/download",
 				"/upload",
 				"/rename",
