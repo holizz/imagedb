@@ -83,3 +83,14 @@ type TagByName []Tag
 func (a TagByName) Len() int           { return len(a) }
 func (a TagByName) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a TagByName) Less(i, j int) bool { return a[i] < a[j] }
+
+type TagInfo struct {
+	Name string
+	Num  int64
+}
+
+type TagInfoByName []TagInfo
+
+func (a TagInfoByName) Len() int           { return len(a) }
+func (a TagInfoByName) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a TagInfoByName) Less(i, j int) bool { return a[i].Name < a[j].Name }

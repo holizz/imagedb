@@ -10,15 +10,17 @@
       <thead>
         <tr>
           <th>Tag</th>
+          <th>Count</th>
           <th>Actions</th>
         </tr>
       </thead>
       <tbody>
         <template is="dom-repeat" items="{{data.Results}}">
           <tr>
-            <td><a href="{{tagLink(item)}}">{{item}}</a></td>
+            <td><a href="{{tagLink(item.Name)}}">{{item.Name}}</a></td>
+            <td>{{item.Num}}</td>
             <td>
-              <a href="{{renameLink(item)}}">Rename</a>
+              <a href="{{renameLink(item.Name)}}">Rename</a>
             </td>
           </tr>
         </template>

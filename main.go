@@ -338,26 +338,30 @@ func handleApiTags(session *db.Session) func(http.ResponseWriter, *http.Request)
 				panic(err)
 			}
 
-			_tags := map[db.Tag]bool{}
+			tags := map[db.Tag]int64{}
 			for _, image := range images {
 				for _, tag := range image.Tags {
-					_tags[db.Tag(tag)] = true
+					tags[db.Tag(tag)] += 1
 				}
 			}
 
-			tags := []db.Tag{}
-			for tag := range _tags {
-				tags = append(tags, tag)
+			tagsWithInfo := []db.TagInfo{}
+
+			for tag, num := range tags {
+				tagsWithInfo = append(tagsWithInfo, db.TagInfo{
+					Name: string(tag),
+					Num:  num,
+				})
 			}
 
-			sort.Sort(db.TagByName(tags))
+			sort.Sort(db.TagInfoByName(tagsWithInfo))
 
 			renderJson(w, struct {
 				Num     int64
-				Results []db.Tag
+				Results []db.TagInfo
 			}{
-				Num:     int64(len(tags)),
-				Results: tags,
+				Num:     int64(len(tagsWithInfo)),
+				Results: tagsWithInfo,
 			})
 		default:
 			w.WriteHeader(http.StatusMethodNotAllowed)
