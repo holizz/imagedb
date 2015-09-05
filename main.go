@@ -140,42 +140,59 @@ func handleRoot(session *db.Session) func(http.ResponseWriter, *http.Request) {
 
 func handleDownload(session *db.Session) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		url := r.FormValue("url")
+		r.ParseForm()
 
 		switch r.Method {
 		case "GET":
+			urls := r.Form["url"]
 			render(w, `
 			{{define "title"}}Download{{end}}
 			{{define "body"}}
-			<form method="POST">
-				<label>
-					URL
-					<input type="text" name="url" value="{{.url}}">
-				</label>
-				<label>
-					Tags
-					<input type="text" name="tags" autofocus>
-				</label>
-				<input type="submit">
-			</form>
-			<img src="{{.url}}">
+				<form method="POST">
+					<label>
+						URL
+						{{range .url}}
+							<input type="text" name="url" value="{{.}}">
+						{{end}}
+					</label>
+					<label>
+						Tags
+						<input type="text" name="tags" autofocus>
+					</label>
+					<input type="submit">
+				</form>
+				{{range .url}}
+					<img src="{{.}}">
+				{{end}}
 			{{end}}
 			`, map[string]interface{}{
-				"url": url,
+				"url": urls,
 			})
 
 		case "POST":
+			urls := r.PostForm["url"]
 			tags := db.TagsFromString(r.FormValue("tags"))
 
-			resp, err := http.Get(url)
-			if err != nil {
-				panic(err)
+			var storedImage db.Image
+
+			for _, url := range urls {
+				resp, err := http.Get(url)
+				if err != nil {
+					panic(err)
+				}
+
+				storedImage = addImage(session, resp.Body, tags, url)
 			}
 
-			storedImage := addImage(session, resp.Body, tags, url)
-
-			w.Header()["Location"] = []string{storedImage.Link()}
-			w.WriteHeader(http.StatusFound)
+			if len(urls) == 1 {
+				w.Header()["Location"] = []string{storedImage.Link()}
+				w.WriteHeader(http.StatusFound)
+			} else {
+				w.Header()["Location"] = []string{
+					"/search?q=" + url.QueryEscape(strings.Join(tags, " ")),
+				}
+				w.WriteHeader(http.StatusFound)
+			}
 
 		default:
 			w.WriteHeader(http.StatusMethodNotAllowed)
