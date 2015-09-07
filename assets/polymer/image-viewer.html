@@ -74,21 +74,20 @@
         var pages = this.$.pages
 
         menu.addEventListener('iron-select', function() {
-          thus.current = thus.sector + this.selected
+          thus.current = (thus.sector * thus.size) + this.selected
           pages.select(this.selected)
         })
 
         document.onkeyup = function(e){
-          var selected = thus.current
           var length = thus.data.Results.length
 
           if (e.keyIdentifier === 'U+004B' || e.keyIdentifier === 'Up') {
-            selected = (length + selected - 1) % length
+            var selected = (length + thus.current - 1) % length
+            thus.show(selected)
           } else if (e.keyIdentifier === 'U+004A' || e.keyIdentifier === 'Down') {
-            selected = (selected + 1) % length
+            var selected = (thus.current + 1) % length
+            thus.show(selected)
           }
-
-          thus.show(selected)
         }
       },
       handleResponse: function () {
