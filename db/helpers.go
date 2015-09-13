@@ -8,7 +8,11 @@ import (
 
 func parseQuery(s string) bson.M {
 	if s == ":all" {
-		return bson.M{}
+		return bson.M{
+			"tags": bson.M{
+				"$nin": []string{"_delete"},
+			},
+		}
 	}
 
 	if s == ":untagged" {
