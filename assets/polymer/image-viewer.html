@@ -76,6 +76,10 @@
         menu.addEventListener('iron-select', function() {
           thus.current = (thus.sector * thus.size) + this.selected
           pages.select(this.selected)
+
+          if (document.location.hash.substr(1) !== thus.current.toString()) {
+            window.history.pushState({item: thus.current}, "", document.location.pathname+document.location.search+"#"+thus.current)
+          }
         })
 
         document.onkeyup = function(e){
@@ -89,9 +93,20 @@
             thus.show(selected)
           }
         }
+
+        window.onpopstate = function (e) {
+          thus.showCurrent()
+        }
       },
       handleResponse: function () {
-        this.show(0)
+        this.showCurrent()
+      },
+      showCurrent: function () {
+        var num = 0
+        if (document.location.hash.substr(1) !== '') {
+          num = parseInt(document.location.hash.substr(1), 10)
+        }
+        this.show(num)
       },
       show: function (num) {
         this.current = num
