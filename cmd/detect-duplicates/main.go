@@ -4,7 +4,6 @@ import (
 	"log"
 
 	"github.com/holizz/imagedb/db"
-	"gopkg.in/mgo.v2/bson"
 )
 
 func main() {
@@ -60,11 +59,8 @@ func main() {
 }
 
 func getDuplicates(session *db.Session) [][]db.Image {
-	images, err := session.Find(bson.M{
-		"tags": bson.M{
-			"$nin": []string{"_delete"},
-		},
-	})
+	// :all excludes _delete by default
+	images, err := session.Find(":all")
 	if err != nil {
 		panic(err)
 	}
