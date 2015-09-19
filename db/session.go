@@ -126,3 +126,14 @@ func (s *Session) Tags() ([]TagInfo, error) {
 
 	return tagsWithInfo, nil
 }
+
+func (s *Session) RemoveAll(query string) (int, error) {
+	c := s.mongo.DB("imagedb").C("images")
+
+	info, err := c.RemoveAll(parseQuery(query))
+	if err != nil {
+		return 0, fmt.Errorf("(*Session) RemoveAll: %v", err)
+	}
+
+	return info.Removed, nil
+}
