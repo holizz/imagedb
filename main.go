@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"sort"
 	"strings"
 
 	"github.com/holizz/imagedb/db"
@@ -314,35 +313,17 @@ func handleApiTags(session *db.Session) func(http.ResponseWriter, *http.Request)
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "GET":
-			images, err := session.Find(":all")
+			tags, err := session.Tags()
 			if err != nil {
 				panic(err)
 			}
-
-			tags := map[db.Tag]int64{}
-			for _, image := range images {
-				for _, tag := range image.Tags {
-					tags[db.Tag(tag)] += 1
-				}
-			}
-
-			tagsWithInfo := []db.TagInfo{}
-
-			for tag, num := range tags {
-				tagsWithInfo = append(tagsWithInfo, db.TagInfo{
-					Name: string(tag),
-					Num:  num,
-				})
-			}
-
-			sort.Sort(db.TagInfoByName(tagsWithInfo))
 
 			renderJson(w, struct {
 				Num     int64
 				Results []db.TagInfo
 			}{
-				Num:     int64(len(tagsWithInfo)),
-				Results: tagsWithInfo,
+				Num:     int64(len(tags)),
+				Results: tags,
 			})
 		default:
 			w.WriteHeader(http.StatusMethodNotAllowed)

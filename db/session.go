@@ -3,6 +3,7 @@ package db
 import (
 	"fmt"
 	"os"
+	"sort"
 
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
@@ -94,4 +95,31 @@ func (s *Session) Insert(image Image) error {
 		return fmt.Errorf("(*Session) Insert: %v", err)
 	}
 	return nil
+}
+
+func (s *Session) Tags() ([]TagInfo, error) {
+	images, err := s.Find(":all")
+	if err != nil {
+		return nil, err
+	}
+
+	tags := map[Tag]int64{}
+	for _, image := range images {
+		for _, tag := range image.Tags {
+			tags[Tag(tag)] += 1
+		}
+	}
+
+	tagsWithInfo := []TagInfo{}
+
+	for tag, num := range tags {
+		tagsWithInfo = append(tagsWithInfo, TagInfo{
+			Name: string(tag),
+			Num:  num,
+		})
+	}
+
+	sort.Sort(TagInfoByName(tagsWithInfo))
+
+	return tagsWithInfo, nil
 }
