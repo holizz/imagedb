@@ -98,9 +98,12 @@ func (s *Session) Insert(image Image) error {
 }
 
 func (s *Session) Tags() ([]TagInfo, error) {
-	images, err := s.Find(":all")
+	var images []Image
+	c := s.mongo.DB("imagedb").C("images")
+
+	err := c.Find(bson.M{}).All(&images)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("(*Session) Tags: %v", err)
 	}
 
 	tags := map[Tag]int64{}
