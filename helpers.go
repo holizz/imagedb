@@ -2,10 +2,8 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"html/template"
 	"io"
-	"math"
 	"net/http"
 
 	"github.com/holizz/imagedb/db"
@@ -13,18 +11,12 @@ import (
 )
 
 func addImage(session *db.Session, imageReader io.Reader, tags []string, originalName string) db.Image {
-	image := make([]byte, int(math.Pow(2, 22))+1)
-	n, err := io.ReadFull(imageReader, image)
-	if err != nil && err != io.ErrUnexpectedEOF {
+	startOfImage := make([]byte, 512)
+	_, err := imageReader.Read(startOfImage)
+	if err != nil {
 		panic(err)
 	}
-
-	if n > int(math.Pow(2, 22)) {
-		// the image is bigger than 4MB!
-		panic(fmt.Errorf(`image too big: %d bytes`, n))
-	}
-
-	mimeType := http.DetectContentType(image[:n])
+	mimeType := http.DetectContentType(startOfImage)
 
 	rawImage, err := session.CreateRawImage()
 	if err != nil {
@@ -33,7 +25,12 @@ func addImage(session *db.Session, imageReader io.Reader, tags []string, origina
 	defer rawImage.Close()
 
 	rawImage.SetContentType(mimeType)
-	_, err = rawImage.Write(image[:n])
+	_, err = rawImage.Write(startOfImage)
+	if err != nil {
+		panic(err)
+	}
+
+	_, err = io.Copy(rawImage, imageReader)
 	if err != nil {
 		panic(err)
 	}
